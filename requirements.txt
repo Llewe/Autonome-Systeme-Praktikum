@@ -1,0 +1,7 @@
+mlagents==0.26.0
+mlagents-envs==0.26.0
+gym-unity==0.26.0
+
+numpy~=1.19.5
+gym~=0.18.3
+mlflow~=1.17.0
