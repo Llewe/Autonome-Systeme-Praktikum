@@ -5,5 +5,12 @@
 2. Switch to env `conda activate l-ki` (depending on os)
 3. Install packages `pip install -r requirements.txt`
 
+### Setup Unity Env (Environment Executable)
+> https://github.com/Unity-Technologies/ml-agents/blob/main/docs/Learning-Environment-Executable.md
+
+
+
 ## Check Carbon Footprint
 Load webpage `carbonboard --filepath="emissions.csv"`
+
+
