@@ -1,3 +1,5 @@
+
+
 def episode(env,agent,nr_episode=0, render=False):
     state = env.reset()
     undiscounted_return = 0
@@ -24,6 +26,3 @@ at the moment without multiple instances at once
 def training(env,agent,episodes):
     for nr_episode in range(episodes):
         episode(env,agent,nr_episode,True)
-    
-    
-    

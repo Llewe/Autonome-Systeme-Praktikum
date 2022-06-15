@@ -8,9 +8,15 @@
 ### Setup Unity Env (Environment Executable)
 > https://github.com/Unity-Technologies/ml-agents/blob/main/docs/Learning-Environment-Executable.md
 
-
+## Application Parameter
+- `-m <name>` storage name of the model
+- `-d` use the demo ppo
+- `-r` enable replay mode
 
 ## Check Carbon Footprint
-Load webpage `carbonboard --filepath="emissions.csv"`
+Load webpage `carbonboard --filepath="./out/emissions.csv"`
 
-
+## Check Model Logs - TensorBoard
+```
+tensorboard --logdir ./logs --port 9238
+```
