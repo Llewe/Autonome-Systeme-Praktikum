@@ -16,7 +16,7 @@ def trainingDemo(env,name,episodes):
         policy=MlpPolicy,
         env=env,
         batch_size=128,
-        learning_rate=1e-04,
+        learning_rate=3e-04,
         gae_lambda=0.99,
         gamma=0.9999,
         clip_range=0.1,

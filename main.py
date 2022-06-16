@@ -19,10 +19,10 @@ modelName = args.model
 
 if args.demo:
     if args.replay:
-        env = envBuilder.createUnityEnv(no_graphics=False)
-        replayDemo(env,modelName)
+        env = envBuilder.createUnityEnv(no_graphics=False,rngGravity=True,rngMass=True,rngScale=True,individualScale=True)
+        replayDemo(env,modelName,True)
     else:
-        env = envBuilder.createUnityEnv()
+        env = envBuilder.createUnityEnv(no_graphics=True,rngGravity=True,rngMass=True,rngScale=True,individualScale=True)
         trainingDemo(env,modelName,1000000)     
 
 tracker.stop()

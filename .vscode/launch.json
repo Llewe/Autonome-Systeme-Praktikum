@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "args": [
-                "-m", "3DBox-long-low-lr",
+                "-m", "3DBox-long-rng-bouncy",
                 "-d"
             ],
             "justMyCode": true
@@ -23,7 +23,7 @@
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "args": [
-                "-m", "3DBox-long-low-lr",
+                "-m", "3DBox-long-rng-bouncy",
                 "-d",
                 "-r"
             ],
