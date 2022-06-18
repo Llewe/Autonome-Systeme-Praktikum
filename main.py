@@ -1,6 +1,7 @@
 from codecarbon import OfflineEmissionsTracker
 from src.trainingDemo import replayDemo,trainingDemo
 import src.envBuilder as envBuilder
+from src.training import startTraining
 
 import argparse
 
@@ -24,5 +25,6 @@ if args.demo:
     else:
         env = envBuilder.createUnityEnv(no_graphics=True,rngGravity=True,rngMass=True,rngScale=True,individualScale=True)
         trainingDemo(env,modelName,1000000)     
-
+else:
+    startTraining()
 tracker.stop()
