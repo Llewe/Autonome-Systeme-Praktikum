@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from ActorCritic import ActorCritic
+from src.ActorCritic import ActorCritic
 
 device = torch.device('cpu')
 if(torch.cuda.is_available()): 

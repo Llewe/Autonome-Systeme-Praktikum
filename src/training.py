@@ -1,6 +1,7 @@
 import numpy as np
 import gym
-from PPO import PPO
+from src.PPO import PPO
+from src.envBuilder import createGymEnv, createUnityEnv
 
 def episode(env,agent,nr_episode=0, render=False):
     state = env.reset()
@@ -39,8 +40,7 @@ def training(env,agent,episodes):
         episode(env,agent,nr_episode,True)
     
     
-if __name__ == '__main__':
-    env_name = "MountainCarContinuous-v0"                
+def startTraining():            
 
     params = {}
     params["has_continuous_action_space"] = True
@@ -52,9 +52,9 @@ if __name__ == '__main__':
     params["lr_critic"] = 0.001  
     params["action_std"] = 0.6     
 
-    print("training environment name : " + env_name)
+   # print("training environment name : " + env_name)
 
-    env = gym.make(env_name)
+    env = createUnityEnv(no_graphics=False)
     
     state_dim = env.observation_space.shape[0]
     if params["has_continuous_action_space"]:

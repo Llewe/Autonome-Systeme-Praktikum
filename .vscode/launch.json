@@ -28,6 +28,18 @@
                 "-r"
             ],
             "justMyCode": true
+        },
+        {
+            "name": "PP-First-Test",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-m", "3DBox-long-rng-bouncy",
+                "-r"
+            ],
+            "justMyCode": true
         }
     ]
 }
