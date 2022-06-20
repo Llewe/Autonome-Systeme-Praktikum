@@ -24,7 +24,7 @@ def createUnityEnv(name='3DEllipsoid1-Bouncy',no_graphics=True,time_scale=20.,rn
     print(f"Unit-Env file '{unityEnvDir}' doesn't exist.")
     exit()
   
-  unityExe = os.path.abspath(os.path.join(unityEnvDir, "asp"))
+  unityExe = os.path.abspath(unityEnvDir)
   
   envChannel = EnvironmentParametersChannel()
   

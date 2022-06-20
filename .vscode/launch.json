@@ -11,8 +11,10 @@
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "args": [
-                "-m", "3DBox-long-rng-bouncy",
-                "-d"
+                "-m", "3DEllipsoid1-Bouncy",
+                "-d",
+                "-env", "unity",
+                "-e", "50",
             ],
             "justMyCode": true
         },
@@ -23,9 +25,11 @@
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "args": [
-                "-m", "3DBox-long-rng-bouncy",
+                "-m", "3DEllipsoid1-Bouncy",
                 "-d",
-                "-r"
+                "-env", "unity",
+                "-r",
+                "-e", "50",
             ],
             "justMyCode": true
         },
@@ -38,8 +42,8 @@
             "args": [
                 "-env", "unity",
                 "-m", "test",
-                "-e", "10000",
-                "-us", "4000",
+                "-e", "50000",
+                "-us", "2048",
                 "-g", "0.99",
                 "-lr_a", "3e-04",
                 "-lr_c", "3e-04",
