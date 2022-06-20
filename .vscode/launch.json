@@ -1,58 +1,65 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Demo-Training",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/main.py",
-            "console": "integratedTerminal",
-            "args": [
-                "-m", "3DEllipsoid1-Bouncy",
-                "-d",
-                "-env", "unity",
-                "-e", "50",
-            ],
-            "justMyCode": true
-        },
-        {
-            "name": "Demo-Replay",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/main.py",
-            "console": "integratedTerminal",
-            "args": [
-                "-m", "3DEllipsoid1-Bouncy",
-                "-d",
-                "-env", "unity",
-                "-r",
-                "-e", "50",
-            ],
-            "justMyCode": true
-        },
-        {
-            "name": "PPO-Training",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/main.py",
-            "console": "integratedTerminal",
-            "args": [
-                "-env", "unity",
-                "-m", "test",
-                "-e", "50000",
-                "-us", "2048",
-                "-g", "0.99",
-                "-lr_a", "3e-04",
-                "-lr_c", "3e-04",
-                "-ke", "80",
-                "-e_clip", "0.2",
-                "-a_std", "0.6",
-
-            ],
-            "justMyCode": true
-        }
-    ]
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Demo-Training",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "console": "integratedTerminal",
+      "args": ["-m", "3DEllipsoid1-Bouncy", "-d", "-env", "unity", "-e", "50"],
+      "justMyCode": true
+    },
+    {
+      "name": "Demo-Replay",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "console": "integratedTerminal",
+      "args": [
+        "-m",
+        "3DEllipsoid1-Bouncy",
+        "-d",
+        "-env",
+        "unity",
+        "-r",
+        "-e",
+        "50"
+      ],
+      "justMyCode": true
+    },
+    {
+      "name": "PPO-Training",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "console": "integratedTerminal",
+      "args": [
+        "-env",
+        "unity",
+        "-m",
+        "test",
+        "-e",
+        "50000",
+        "-us",
+        "2048",
+        "-g",
+        "0.99",
+        "-lr_a",
+        "3e-04",
+        "-lr_c",
+        "3e-04",
+        "-ke",
+        "80",
+        "-e_clip",
+        "0.2",
+        "-a_std",
+        "0.6"
+      ],
+      "justMyCode": true
+    }
+  ]
 }
