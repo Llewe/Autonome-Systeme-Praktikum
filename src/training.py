@@ -35,26 +35,24 @@ def episode(env,agent,nr_episode=0, render=False):
 """
 at the moment without multiple instances at once
 """
-def training(env,agent,episodes):
+def training(env,agent,episodes,render):
     for nr_episode in range(episodes):
-        episode(env,agent,nr_episode,True)
+        episode(env,agent,nr_episode,render)
     
     
-def startTraining():            
+def startTraining(args,env):            
 
     params = {}
     params["has_continuous_action_space"] = True
-    params["update_timestep"] = 4000
-    params["K_epochs"] = 80               
-    params["eps_clip"] = 0.2          
-    params["gamma"] = 0.99            
-    params["lr_actor"] = 0.0003       
-    params["lr_critic"] = 0.001  
-    params["action_std"] = 0.6     
+    params["update_timestep"] = args.u_step
+    params["K_epochs"] = args.k_epochs               
+    params["eps_clip"] = args.epsilon_clip        
+    params["gamma"] = args.gamma      
+    params["lr_actor"] = args.lr_actor     
+    params["lr_critic"] = args.lr_critic
+    params["action_std"] = args.action_std  
 
    # print("training environment name : " + env_name)
-
-    env = createUnityEnv(no_graphics=False)
     
     state_dim = env.observation_space.shape[0]
     if params["has_continuous_action_space"]:
@@ -72,4 +70,4 @@ def startTraining():
                 params["has_continuous_action_space"], 
                 params["action_std"])
 
-    training(env=env, agent=agent, episodes=params["K_epochs"])
+    training(env=env, agent=agent, episodes=args.episodes,render=args.replay)

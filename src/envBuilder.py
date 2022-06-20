@@ -56,3 +56,15 @@ def createUnityEnv(name='3DEllipsoid1-Bouncy',no_graphics=True,time_scale=20.,rn
 
   return env
 
+
+def buildFromArgs(args):
+  if args.env == "gym":
+    env = createGymEnv()
+  elif args.env == "unity":
+    noGraphics = not args.replay
+    env = createUnityEnv(no_graphics=noGraphics)
+  else:
+    print("unknown env. Falling back to gym env")
+    env = createGymEnv()
+  return env
+  
