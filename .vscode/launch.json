@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Training",
+            "name": "Demo-Training",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
@@ -17,7 +17,7 @@
             "justMyCode": true
         },
         {
-            "name": "Replay",
+            "name": "Demo-Replay",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
@@ -30,14 +30,23 @@
             "justMyCode": true
         },
         {
-            "name": "PP-First-Test",
+            "name": "PPO-Training",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "args": [
-                "-m", "3DBox-long-rng-bouncy",
-                "-r"
+                "-env", "unity",
+                "-m", "test",
+                "-e", "10000",
+                "-us", "4000",
+                "-g", "0.99",
+                "-lr_a", "3e-04",
+                "-lr_c", "3e-04",
+                "-ke", "80",
+                "-e_clip", "0.2",
+                "-a_std", "0.6",
+
             ],
             "justMyCode": true
         }
