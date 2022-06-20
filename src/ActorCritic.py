@@ -23,6 +23,7 @@ class ActorCritic(nn.Module):
             self.action_var = torch.full((action_dim,), action_std_init * action_std_init).to(device)
         # actor
         if has_continuous_action_space :
+            
             self.actor = nn.Sequential(
                             nn.Linear(state_dim, 64),
                             nn.Tanh(),
@@ -84,6 +85,7 @@ class ActorCritic(nn.Module):
             
             # For Single Action Environments.
             if self.action_dim == 1:
+            
                 action = action.reshape(-1, self.action_dim)
         else:
             action_probs = self.actor(state)
