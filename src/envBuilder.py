@@ -52,7 +52,7 @@ def createUnityEnv(name='3DEllipsoid1-Bouncy',no_graphics=True,time_scale=20.,rn
     else:
       envChannel.set_uniform_sampler_parameters("scale", 0.2,5,5463343)
     
-  env = UnityToGymWrapper(envUnity)
+  env = UnityToGymWrapper(envUnity, allow_multiple_obs=True)
 
   return env
 
