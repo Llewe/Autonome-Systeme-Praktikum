@@ -71,7 +71,8 @@ def startTraining():
     params["lr_actor"] = 0.0000003      
     params["lr_critic"] = 0.000001 
     params["action_std"] = 0.6     
-
+    params["episodes"] = 10000
+    
    # print("training environment name : " + env_name)
 
     env = createUnityEnv(no_graphics=True)
@@ -107,5 +108,5 @@ def startTraining():
                 params["has_continuous_action_space"], 
                 params["action_std"])
 
-    training(env=env, checkpoint_path=checkpoint_path, agent=agent, episodes=params["K_epochs"])
+    training(env=env, checkpoint_path=checkpoint_path, agent=agent, episodes=params["episodes"])
     env.close()
