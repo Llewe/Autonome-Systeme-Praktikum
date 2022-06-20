@@ -9,9 +9,20 @@
 > https://github.com/Unity-Technologies/ml-agents/blob/main/docs/Learning-Environment-Executable.md
 
 ## Application Parameter
-- `-m <name>` storage name of the model
+### Required:
+- `-env <type>` set the enviroment (`gym` or `unity`)
+### Optional
 - `-d` use the demo ppo
 - `-r` enable replay mode
+- `-m <name>` storage name of the model
+- `-e <number>` training episode number 
+- `-us <number>` number of steps until update (n_steps/update_timestep)
+- `-g <number>` discount factor
+- `-lr_a <number>` learn rate of the actor
+- `-lr_c <number>` learn rate of the critic
+- `-ke <number>` "--k_epochs"
+- `-e_clip <number>` eps_clip
+- `-a_std <number>` action_std
 
 ## Check Carbon Footprint
 Load webpage `carbonboard --filepath="./out/emissions.csv"`

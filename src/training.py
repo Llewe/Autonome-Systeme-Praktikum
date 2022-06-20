@@ -49,29 +49,28 @@ def episode(env, checkpoint_path, agent,nr_episode=0, update_timestep=4000, rend
 """
 at the moment without multiple instances at once
 """
-def training(env, checkpoint_path, agent,nr_episodes, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq):
+
+def training(env, checkpoint_path, agent,nr_episodes, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq, render):
     list_total_return = []
     for nr_episode in range(nr_episodes):
-        total_return = episode(env, checkpoint_path, agent,nr_episode,True, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
-        list_total_return.append(total_return)
-    plt.plot(list_total_return)
-    plt.show()
-        
+        episode(env, checkpoint_path, agent,nr_episode,True, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq, render)
+       
+
+       
     
-def startTraining():            
+def startTraining(args,env):            
 
     params = {}
     params["has_continuous_action_space"] = True
-    params["update_timestep"] = 64    
-    params["K_epochs"] = 30     # should probably be between [3, 30]          
-    params["eps_clip"] = 0.2    # should probably be between [0.1, 0.3]          
-    params["gamma"] = 0.99      # probably 0.99 at its best          
-    params["lr_actor"] = 0.0003      
-    params["lr_critic"] = 0.001 
-    params["action_std"] = 0.6     
-    params["nr_episodes"] = 500
+    params["update_timestep"] = args.u_step #64
+    params["K_epochs"] = args.k_epochs  #30         # should probably be between [3, 30]                       
+    params["eps_clip"] = args.epsilon_clip #0.2     # should probably be between [0.1, 0.3]    
+    params["gamma"] = args.gamma #0.99              # probably 0.99 at its best  
+    params["lr_actor"] = args.lr_actor #0.0003    
+    params["lr_critic"] = args.lr_critic #0.001
+    params["action_std"] = args.action_std #0.6  
     params["action_std_decay_rate"] = 0.05          # action standard deviation decay rate
-    params["min_action_std"] = 0.1                 # minimum action standard deviation
+    params["min_action_std"] = 0.1                  # minimum action standard deviation
     params["action_std_decay_freq"] = int(2.5e5)    # action standard deviation decay frequency
     params["save_model_freq"] = int(1e1)            # save model to checkpoint frequency 
 
@@ -112,7 +111,7 @@ def startTraining():
                 params["action_std"])
     
     # train agent
-    training(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=params["nr_episodes"], update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"])
+    training(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=args.episodes, update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"], render=args.replay)
 
     #close environment
     env.close()
