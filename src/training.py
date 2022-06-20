@@ -5,7 +5,7 @@ from src.PPO import PPO
 import matplotlib.pyplot as plt
 from src.envBuilder import createGymEnv, createUnityEnv
 
-def episode(env, checkpoint_path, agent,nr_episode=0, update_timestep=4000, render=False, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
+def episode(env, checkpoint_path, agent,nr_episode=0, render=False, update_timestep=4000, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
     state = env.reset()
     total_return = 0
     done = False
@@ -50,10 +50,10 @@ def episode(env, checkpoint_path, agent,nr_episode=0, update_timestep=4000, rend
 at the moment without multiple instances at once
 """
 
-def training(env, checkpoint_path, agent,nr_episodes, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq, render):
+def training(env, checkpoint_path, agent, nr_episodes, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq):
     list_total_return = []
     for nr_episode in range(nr_episodes):
-        episode(env, checkpoint_path, agent,nr_episode,True, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq, render)
+        episode(env, checkpoint_path, agent, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
        
 
        
@@ -76,7 +76,7 @@ def startTraining(args,env):
 
     # start environment
     # no graphics: faster, no visual rendering 
-    env = createUnityEnv(no_graphics=True)
+    #env = createUnityEnv(no_graphics=True)
     #env = gym.make('CartPole-v1')
     
     state_dim = env.observation_space[0].shape[0]
