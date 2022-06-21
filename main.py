@@ -29,8 +29,8 @@ def parseArguments():
     return parser.parse_args()
     
 
-tracker = OfflineEmissionsTracker(output_dir="./out/", country_iso_code="DEU") # project_name="L-KI"
-tracker.start()
+#tracker = OfflineEmissionsTracker(output_dir="./out/", country_iso_code="DEU") # project_name="L-KI"
+#tracker.start()
 
 args = parseArguments()
 
@@ -50,4 +50,4 @@ else:
         #Trainng mode
         startTraining(args,env)
     
-tracker.stop()
+#tracker.stop()
