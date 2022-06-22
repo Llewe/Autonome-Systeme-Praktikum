@@ -23,12 +23,13 @@ def episodeVec(env, checkpoint_path, agent,nr_episode=0, render=False, update_ti
     
     while not done:
         # Calculate action for every simulation
-        for i in range(simulationCount):
-            if i in decision_steps: #simulation still active?
-                action = agent.select_action(decision_steps.obs[0][i])
-                action = ActionTuple(np.array([action], dtype=np.float32)) # "convert" action
+        for simIndex in range(simulationCount):
+            if simIndex in decision_steps: #simulation still active?
+                action = agent.select_action(decision_steps[simIndex].obs)
+                # "convert" action
+                action = ActionTuple(np.array([action], dtype=np.float32))
                 
-                env.set_action_for_agent(behavior_name,i, action)
+                env.set_action_for_agent(behavior_name,simIndex, action)
         
         # execute the steps in unity
         env.step()
@@ -37,19 +38,19 @@ def episodeVec(env, checkpoint_path, agent,nr_episode=0, render=False, update_ti
         decision_steps, terminal_steps = env.get_steps(behavior_name)
         
         # calculate the reward of each agent
-        for i in range(simulationCount):
+        for simIndex in range(simulationCount):
             # only update if agent was active and did a step
 
             reward = 0
-            if i in decision_steps: # The agent requested a decision
-                reward  = decision_steps[i].reward
-            if i in terminal_steps: # The agent terminated its episode
-                reward  = terminal_steps[i].reward
-                dones[i] = True
-            episode_rewards[i] += reward
+            if simIndex in decision_steps: # The agent requested a decision
+                reward  = decision_steps[simIndex].reward
+            if simIndex in terminal_steps: # The agent terminated its episode
+                reward  = terminal_steps[simIndex].reward
+                dones[simIndex] = True
+            episode_rewards[simIndex] += reward
                 # 3. Update buffer
             agent.buffer.rewards.append(reward)         
-            agent.buffer.is_terminals.append(dones[i])
+            agent.buffer.is_terminals.append(dones[simIndex])
 
         
         # 4. Integrate new experience into agent
@@ -60,8 +61,8 @@ def episodeVec(env, checkpoint_path, agent,nr_episode=0, render=False, update_ti
             agent.decay_action_std(action_std_decay_rate, min_action_std)
 
 
-        if time_step % save_model_freq == 0:
-            agent.save(checkpoint_path)
+    #     if time_step % save_model_freq == 0:
+    #        agent.save(checkpoint_path)
             
         time_step += 1
         # no more active agents => done
@@ -69,9 +70,9 @@ def episodeVec(env, checkpoint_path, agent,nr_episode=0, render=False, update_ti
             done = True
 
             
-    print(f"Total rewards for episode {nr_episode} is {np.mean(episode_rewards)}")
+   # print(f"Total rewards for episode {nr_episode} is {np.mean(episode_rewards)}")
     
-    return episode_rewards
+    return np.mean(episode_rewards)
     
 
 def episode(env, checkpoint_path, agent,nr_episode=0, render=False, update_timestep=4000, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
@@ -88,14 +89,12 @@ def episode(env, checkpoint_path, agent,nr_episode=0, render=False, update_times
         # Note : len(decision_steps) = [number of agents that requested a decision]
         if tracked_agent == -1 and len(decision_steps) >= 1:
             tracked_agent = decision_steps.agent_id[3]
-            print(f"set tracked_agent {tracked_agent}, lenght = {len(decision_steps)}")
         elif len(decision_steps) == 0:
-            print(f"decision_length = {len(decision_steps)}")
             break
  
         # Generate an action for all agents
         # print(f"decision_steps {decision_steps.obs}")
-        action = agent.select_action(decision_steps.obs[0][tracked_agent])
+        action = agent.select_action(decision_steps[tracked_agent].obs)
         # print(f"action {type(action)} values: {action}")
         action = ActionTuple(np.array([action], dtype=np.float32))
         # Set the actions
@@ -132,7 +131,7 @@ def episode(env, checkpoint_path, agent,nr_episode=0, render=False, update_times
         if time_step % save_model_freq == 0:
             agent.save(checkpoint_path)
             
-    print(f"Total rewards for episode {nr_episode} is {episode_rewards}")
+   # print(f"Total rewards for episode {nr_episode} is {episode_rewards}")
     
     return episode_rewards
 
@@ -143,8 +142,12 @@ at the moment without multiple instances at once
 
 def training(env, checkpoint_path, agent, nr_episodes, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq):
     list_total_return = []
+    meanReward = 0
     for nr_episode in range(nr_episodes):
-        episodeVec(env, checkpoint_path, agent, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
+        meanReward += episodeVec(env, checkpoint_path, agent, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
+        if (nr_episode % 20 == 0):
+            print(f"Total rewards for episode {nr_episode} is {meanReward/20.0}") 
+            meanReward = 0
        
 
        
@@ -160,7 +163,7 @@ def startTraining(args,env):
     params["lr_actor"] = args.lr_actor #0.0003    
     params["lr_critic"] = args.lr_critic #0.001
     params["action_std"] = args.action_std #0.6  
-    params["action_std_decay_rate"] = 0.0005          # action standard deviation decay rate
+    params["action_std_decay_rate"] = 0.00005          # action standard deviation decay rate
     params["min_action_std"] = 0.1                  # minimum action standard deviation
     params["action_std_decay_freq"] = int(2.5e5)    # action standard deviation decay frequency
     params["save_model_freq"] = int(1e1)            # save model to checkpoint frequency 
@@ -198,7 +201,6 @@ def startTraining(args,env):
                 params["gamma"], 
                 params["K_epochs"], 
                 params["eps_clip"], 
-                params["has_continuous_action_space"], 
                 params["action_std"])
     #print(f"state_dim {state_dim}, action_dim {action_dim}")
     # train agent

@@ -27,12 +27,9 @@ class RolloutBuffer:
         del self.is_terminals[:]
         
 class PPO:
-    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, has_continuous_action_space, action_std_init=0.06):
+    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std_init=0.06):
 
-        self.has_continuous_action_space = has_continuous_action_space
-
-        if has_continuous_action_space:
-            self.action_std = action_std_init
+        self.action_std = action_std_init
 
         self.gamma = gamma
         self.eps_clip = eps_clip
@@ -41,67 +38,43 @@ class PPO:
         
         self.buffer = RolloutBuffer()
      
-        self.policy = ActorCritic(state_dim, action_dim, has_continuous_action_space, action_std_init).to(device)
+        self.policy = ActorCritic(state_dim, action_dim, action_std_init).to(device)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy.actor.parameters(), 'lr': lr_actor},
                         {'params': self.policy.critic.parameters(), 'lr': lr_critic}
                     ])
 
-        self.policy_old = ActorCritic(state_dim, action_dim, has_continuous_action_space, action_std_init).to(device)
+        self.policy_old = ActorCritic(state_dim, action_dim, action_std_init).to(device)
     
         self.policy_old.load_state_dict(self.policy.state_dict())
         
         self.MseLoss = nn.MSELoss()
 
     def set_action_std(self, new_action_std):
-        if self.has_continuous_action_space:
-            self.action_std = new_action_std
-            self.policy.set_action_std(new_action_std)
-            self.policy_old.set_action_std(new_action_std)
-        else:
-            print("--------------------------------------------------------------------------------------------")
-            print("WARNING : Calling PPO::set_action_std() on discrete action space policy")
-            print("--------------------------------------------------------------------------------------------")
+        self.action_std = new_action_std
+        self.policy.set_action_std(new_action_std)
+        self.policy_old.set_action_std(new_action_std)
 
     def decay_action_std(self, action_std_decay_rate, min_action_std):
-        #print("--------------------------------------------------------------------------------------------")
-        if self.has_continuous_action_space:
-            self.action_std = self.action_std - action_std_decay_rate
-            self.action_std = round(self.action_std, 4)
-            if (self.action_std <= min_action_std):
-                self.action_std = min_action_std
-                #print("setting actor output action_std to min_action_std : ", self.action_std)
-            else:
-                pass
-                #print("setting actor output action_std to : ", self.action_std)
-            self.set_action_std(self.action_std)
-
+        self.action_std = self.action_std - action_std_decay_rate
+        self.action_std = round(self.action_std, 4)
+        if (self.action_std <= min_action_std):
+            self.action_std = min_action_std
         else:
-            print("WARNING : Calling PPO::decay_action_std() on discrete action space policy")
-        #print("--------------------------------------------------------------------------------------------")
+            pass
+        self.set_action_std(self.action_std)
 
     def select_action(self, state):
+        with torch.no_grad():
+            state = torch.FloatTensor(numpy.array(state)).to(device)
+            action, action_logprob = self.policy_old.act(state)
 
-        if self.has_continuous_action_space:
-            with torch.no_grad():
-                state = torch.FloatTensor(numpy.array(state)).to(device)
-                action, action_logprob = self.policy_old.act(state)
+        self.buffer.states.append(state)
+        self.buffer.actions.append(action)
+        self.buffer.logprobs.append(action_logprob)
 
-            self.buffer.states.append(state)
-            self.buffer.actions.append(action)
-            self.buffer.logprobs.append(action_logprob)
-
-            return action.detach().cpu().numpy().flatten()
-        else:
-            with torch.no_grad():
-                state = torch.FloatTensor(numpy.array(state)).to(device)
-                action, action_logprob = self.policy_old.act(state)
-            
-            self.buffer.states.append(state)
-            self.buffer.actions.append(action)
-            self.buffer.logprobs.append(action_logprob)
-
-            return action.item()
+        return action.detach().cpu().numpy().flatten()
+      
 
     def update(self):
       
