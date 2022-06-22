@@ -2,8 +2,9 @@ from ast import arg
 from codecarbon import OfflineEmissionsTracker
 from src.trainingDemo import replayDemo,trainingDemo
 from src.envBuilder import buildFromArgs
-from src.training import startTraining
-
+from src.training import PPOTraining
+import ray
+import pickle
 import argparse
 
 def parseArguments():
@@ -29,14 +30,14 @@ def parseArguments():
     return parser.parse_args()
     
 
-tracker = OfflineEmissionsTracker(output_dir="./out/", country_iso_code="DEU") # project_name="L-KI"
-tracker.start()
+#tracker = OfflineEmissionsTracker(output_dir="./out/", country_iso_code="DEU") # project_name="L-KI"
+#tracker.start()
 
 args = parseArguments()
 
 modelName = args.model
 
-env = buildFromArgs(args)
+#env = buildFromArgs(args)
 
 if args.demo:
     if args.replay:
@@ -48,6 +49,14 @@ else:
         print("Replay mode for non-demo not implemented yet")
     else:
         #Trainng mode
-        startTraining(args,env)
-    
-tracker.stop()
+        ray.init()
+        ppoTraining = PPOTraining.remote(args)
+     
+
+        asdf = ppoTraining.startTraining.remote(3)
+        #xid = ray.put(asdf)
+        xnew = ray.get(asdf)
+        s = pickle.dumps(xnew)
+        t = pickle.loads(s)
+            
+#tracker.stop()

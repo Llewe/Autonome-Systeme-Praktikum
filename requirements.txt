@@ -3,7 +3,10 @@ torch
 torchvision
 torchaudio
 stable-baselines3
-
+ray
+ray[tune]
+keras
+tensorflow
 
 mlagents==0.28.0
 mlagents_envs==0.28.0
