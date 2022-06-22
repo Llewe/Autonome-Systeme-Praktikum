@@ -12,6 +12,12 @@ if(torch.cuda.is_available()):
     print("Device set to : " + str(torch.cuda.get_device_name(device)))
 else:
     print("Device set to : cpu")
+    
+def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
+    # not sure if needed ""
+    torch.nn.init.orthogonal_(layer.weight, std)
+    torch.nn.init.constant_(layer.bias, bias_const)
+    return layer
 
 class ActorCritic(nn.Module):
     def __init__(self, state_dim, action_dim, action_std_init):
@@ -21,29 +27,24 @@ class ActorCritic(nn.Module):
         self.action_dim = action_dim
         self.action_var = torch.full((action_dim,), action_std_init * action_std_init).to(device)
         # actor
-
-            
         self.actor = nn.Sequential(
-                        nn.Linear(state_dim, 64),
+                        layer_init(nn.Linear(state_dim, 64)),
                         nn.Tanh(),
-                        nn.Linear(64, 64),
+                        layer_init(nn.Linear(64, 64)),
                         nn.Tanh(),
-                        nn.Linear(64, action_dim)
+                        layer_init(nn.Linear(64, action_dim),std=0.01)
                     )
         # critic
         self.critic = nn.Sequential(
-                        nn.Linear(state_dim, 64),
+                        layer_init(nn.Linear(state_dim, 64)),
                         nn.Tanh(),
-                        nn.Linear(64, 64),
+                        layer_init(nn.Linear(64, 64)),
                         nn.Tanh(),
-                        nn.Linear(64, 1)
+                        layer_init(nn.Linear(64, 1),std=1.0)
                     )
         
     def set_action_std(self, new_action_std):
         self.action_var = torch.full((self.action_dim,), new_action_std * new_action_std).to(device)
-       
-    def forward(self):
-        raise NotImplementedError
     
     def act(self, state):
         action_mean = self.actor(state)
@@ -65,8 +66,8 @@ class ActorCritic(nn.Module):
         
         # For Single Action Environments.
         if self.action_dim == 1:
-        
             action = action.reshape(-1, self.action_dim)
+        
         action_logprobs = dist.log_prob(action)
         dist_entropy = dist.entropy()
         state_values = self.critic(state)

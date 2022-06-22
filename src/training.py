@@ -1,8 +1,10 @@
+from operator import le
 import os
 from tkinter.tix import Tree
 import numpy as np
 import gym
 from src.PPO import PPO
+from src.PPOVec import PPOVec
 import matplotlib.pyplot as plt
 from mlagents_envs.base_env import ActionTuple
 from src.envBuilder import createGymEnv, createUnityEnv, createPureUnityEnv
@@ -17,44 +19,52 @@ def episodeVec(env, checkpoint_path, agent,nr_episode=0, render=False, update_ti
     simulationCount = len(decision_steps) # in 3DBall 12 Boxes => 12 simulations
     
     episode_rewards = np.full(simulationCount, 0.0)
-    dones = np.full( simulationCount,False)
-
     time_step = 0
     
+    waiting =  np.full( simulationCount,False)
+    
+    dones = np.full( simulationCount,False)
+    
     while not done:
-        # Calculate action for every simulation
-        for simIndex in range(simulationCount):
-            if simIndex in decision_steps: #simulation still active?
-                action = agent.select_action(decision_steps[simIndex].obs)
-                # "convert" action
+        for index in decision_steps:
+            decition_step = decision_steps[index]
+            simId = decition_step.agent_id
+            if not dones[simId]:# and not waiting[simId]:
+                action = agent.select_action(decition_step.obs,simId)
+
                 action = ActionTuple(np.array([action], dtype=np.float32))
                 
-                env.set_action_for_agent(behavior_name,simIndex, action)
-        
+                env.set_action_for_agent(behavior_name,simId, action)
+                
+                waiting[simId] = True
+                
+                
         # execute the steps in unity
+
         env.step()
 
         # Get the new simulation results
         decision_steps, terminal_steps = env.get_steps(behavior_name)
         
-        # calculate the reward of each agent
-        for simIndex in range(simulationCount):
-            # only update if agent was active and did a step
+        for simId in range(simulationCount):
+            if not dones[simId]:# and waiting[simId]:
+                if simId not in decision_steps and simId not in terminal_steps:
+                    continue
+                
+                reward = 0
+                if simId in decision_steps: # The agent requested a decision
+                    reward += decision_steps[simId].reward
+                if simId in terminal_steps: # The agent terminated its episode
+                    reward += terminal_steps[simId].reward
+                    dones[simId] = True
+                episode_rewards[simId] += reward
+                
+                agent.save_action_reward(reward,dones[simId],simId)
+                #waiting[simId] = False
 
-            reward = 0
-            if simIndex in decision_steps: # The agent requested a decision
-                reward  = decision_steps[simIndex].reward
-            if simIndex in terminal_steps: # The agent terminated its episode
-                reward  = terminal_steps[simIndex].reward
-                dones[simIndex] = True
-            episode_rewards[simIndex] += reward
-                # 3. Update buffer
-            agent.buffer.rewards.append(reward)         
-            agent.buffer.is_terminals.append(dones[simIndex])
-
-        
         # 4. Integrate new experience into agent
-        if time_step % update_timestep == 1:      
+        if time_step % update_timestep == 1:
+          #  print(f"doneActions{doneActions}, savedActions{savedActions}, finalActions{finalActions}")  
             agent.update()
               
         if time_step % action_std_decay_freq == 1:
@@ -66,7 +76,8 @@ def episodeVec(env, checkpoint_path, agent,nr_episode=0, render=False, update_ti
             
         time_step += 1
         # no more active agents => done
-        if len(decision_steps) == 0:
+        
+        if all(dones):
             done = True
 
             
@@ -91,9 +102,7 @@ def episode(env, checkpoint_path, agent,nr_episode=0, render=False, update_times
             tracked_agent = decision_steps.agent_id[3]
         elif len(decision_steps) == 0:
             break
- 
         # Generate an action for all agents
-        # print(f"decision_steps {decision_steps.obs}")
         action = agent.select_action(decision_steps[tracked_agent].obs)
         # print(f"action {type(action)} values: {action}")
         action = ActionTuple(np.array([action], dtype=np.float32))
@@ -194,14 +203,14 @@ def startTraining(args,env):
 
     
     # create PPO driven agent with hyperparameters
-    agent = PPO(8,#state_dim, 
+    agent = PPOVec(8,#state_dim, 
                 2,#action_dim, 
                 params["lr_actor"], 
                 params["lr_critic"], 
                 params["gamma"], 
                 params["K_epochs"], 
                 params["eps_clip"], 
-                params["action_std"])
+                params["action_std"],12)
     #print(f"state_dim {state_dim}, action_dim {action_dim}")
     # train agent
     training(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=args.episodes, update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"], render=args.replay)

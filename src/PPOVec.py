@@ -25,19 +25,24 @@ class RolloutBuffer:
         del self.logprobs[:]
         del self.rewards[:]
         del self.is_terminals[:]
-        
-class PPO:
-    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std_init=0.06):
 
+class TempBuffer:
+    def __init__(self):
+        self.action = {}
+        self.state = {}
+        self.logprob = {}
+
+class PPOVec:
+    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std_init=0.06,simulations=1):
         self.action_std = action_std_init
 
         self.gamma = gamma
         self.eps_clip = eps_clip
         self.K_epochs = K_epochs
-     
+        
         self.buffer = RolloutBuffer()
-        self.tempBuffer = RolloutBuffer()
-     
+        self.tempBuffer = numpy.full(simulations,TempBuffer())
+        
         self.policy = ActorCritic(state_dim, action_dim, action_std_init).to(device)
         
         self.optimizer = torch.optim.Adam([
@@ -46,54 +51,27 @@ class PPO:
                     ],eps=1e-5)
 
         self.policy_old = ActorCritic(state_dim, action_dim, action_std_init).to(device)
-    
+
         self.policy_old.load_state_dict(self.policy.state_dict())
         
         self.MseLoss = nn.MSELoss()
-
+    
     def set_action_std(self, new_action_std):
         self.action_std = new_action_std
         self.policy.set_action_std(new_action_std)
         self.policy_old.set_action_std(new_action_std)
-
+        
     def decay_action_std(self, action_std_decay_rate, min_action_std):
         self.action_std = self.action_std - action_std_decay_rate
         self.action_std = round(self.action_std, 4)
         if (self.action_std <= min_action_std):
             self.action_std = min_action_std
         else:
-            pass
-        self.set_action_std(self.action_std)
-
-    def select_action(self, state):
-        with torch.no_grad():
-            state = torch.FloatTensor(numpy.array(state)).to(device)
-            action, action_logprob = self.policy_old.act(state)
-
-        self.buffer.states.append(state)
-        self.buffer.actions.append(action)
-        self.buffer.logprobs.append(action_logprob)
-
-        return action.detach().cpu().numpy().flatten()
-    
-    
-    def get_action(self,state):
-        with torch.no_grad():
-            state = torch.FloatTensor(numpy.array(state)).to(device)
-            action, action_logprob = self.policy_old.act(state)
-        return action.detach().cpu().numpy().flatten(),state,action_logprob
-    
-    def save_action_reward(self,action,state,logprob,reward,is_terminal):
-        self.buffer.states.append(state)
-        self.buffer.actions.append(action)
-        self.buffer.logprobs.append(logprob)
-        self.buffer.rewards.append(reward)
-        self.buffer.is_terminals.append(is_terminal)
-        
-        
-
+            pass #???
+        self.set_action_std(self.action_std)     
+              
     def update(self):
-      
+        
         # Monte Carlo estimate of returns
       
         rewards = []
@@ -147,7 +125,12 @@ class PPO:
         
         # clear buffer
         self.buffer.clear()
+        self.resetBuffer()
     
+    def resetBuffer(self):
+        for i in range(len(self.tempBuffer)):
+            self.tempBuffer[i].state = None
+            
     def save(self, checkpoint_path):
         torch.save(self.policy_old.state_dict(), checkpoint_path)
    
@@ -155,4 +138,23 @@ class PPO:
         self.policy_old.load_state_dict(torch.load(checkpoint_path, map_location=lambda storage, loc: storage))
         self.policy.load_state_dict(torch.load(checkpoint_path, map_location=lambda storage, loc: storage))
         
-   
+    def select_action(self,state,simulation):
+        with torch.no_grad():
+            state = torch.FloatTensor(numpy.array(state)).to(device)
+            action, action_logprob = self.policy_old.act(state)
+        self.tempBuffer[simulation].state = state
+        self.tempBuffer[simulation].action = action
+        self.tempBuffer[simulation].logprob = action_logprob
+        return action.detach().cpu().numpy().flatten()
+    
+    def save_action_reward(self,reward,is_terminal,simulation):
+        if self.tempBuffer[simulation].state is None:
+            
+            print(f"deleted")
+            return
+        self.buffer.states.append(self.tempBuffer[simulation].state)
+        self.buffer.actions.append(self.tempBuffer[simulation].action)
+        self.buffer.logprobs.append(self.tempBuffer[simulation].logprob)
+        self.buffer.rewards.append(reward)
+        self.buffer.is_terminals.append(is_terminal)
+        
