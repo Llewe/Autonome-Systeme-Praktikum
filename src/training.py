@@ -6,14 +6,23 @@ import matplotlib.pyplot as plt
 from src.envBuilder import createGymEnv, createUnityEnv
 from torch.utils.tensorboard import SummaryWriter
 
-def episode(env, checkpoint_path, agent, writer, nr_episode=0, render=False, update_timestep=4000, 
-            action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
+time_step = 0
+
+def episode(env, checkpoint_path,
+            agent,
+            writer,
+            nr_episode=0,
+            render=False,
+            update_timestep=20, 
+            action_std_decay_rate = 0.01,
+            min_action_std = 0.001,
+            action_std_decay_freq = int(2.5e5), 
+            save_model_freq = int(1e1)):
     state = env.reset()
     total_return = 0
     done = False
-    time_step = 0
    
-
+    global time_step
     while not done:
         if render:
             env.render()
@@ -73,8 +82,8 @@ def startTraining(args,env):
     params["lr_actor"] = args.lr_actor #0.0003    
     params["lr_critic"] = args.lr_critic #0.001
     params["action_std"] = args.action_std #0.6  
-    params["action_std_decay_rate"] = 0.0001          # action standard deviation decay rate
-    params["min_action_std"] = 0.1                  # minimum action standard deviation
+    params["action_std_decay_rate"] = 0.0005         # action standard deviation decay rate
+    params["min_action_std"] = 0.001                  # minimum action standard deviation
     params["action_std_decay_freq"] = int(2.5e5)    # action standard deviation decay frequency
     params["save_model_freq"] = int(1e1)            # save model to checkpoint frequency 
 

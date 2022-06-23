@@ -58,13 +58,10 @@ class PPO:
     def decay_action_std(self, action_std_decay_rate, min_action_std):
 
         self.action_std = self.action_std - action_std_decay_rate
-        self.action_std = round(self.action_std, 4)
+        #self.action_std = round(self.action_std, 4)
         if (self.action_std <= min_action_std):
             self.action_std = min_action_std
             #print("setting actor output action_std to min_action_std : ", self.action_std)
-        else:
-            pass
-            #print("setting actor output action_std to : ", self.action_std)
         self.set_action_std(self.action_std)
 
     def select_action(self, state):
