@@ -4,8 +4,10 @@ import gym
 from src.PPO import PPO
 import matplotlib.pyplot as plt
 from src.envBuilder import createGymEnv, createUnityEnv
+from torch.utils.tensorboard import SummaryWriter
 
-def episode(env, checkpoint_path, agent,nr_episode=0, render=False, update_timestep=4000, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
+def episode(env, checkpoint_path, agent, writer, nr_episode=0, render=False, update_timestep=4000, 
+            action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
     state = env.reset()
     total_return = 0
     done = False
@@ -41,7 +43,10 @@ def episode(env, checkpoint_path, agent,nr_episode=0, render=False, update_times
         if time_step % save_model_freq == 0:
             agent.save(checkpoint_path)
         
+        
+        
     print(nr_episode, ":", total_return)
+    writer.add_scalar("reward x episode", total_return, nr_episode)
     
     return total_return
 
@@ -50,10 +55,10 @@ def episode(env, checkpoint_path, agent,nr_episode=0, render=False, update_times
 at the moment without multiple instances at once
 """
 
-def training(env, checkpoint_path, agent, nr_episodes, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq):
+def training(env, checkpoint_path, agent, nr_episodes, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq, writer):
     list_total_return = []
     for nr_episode in range(nr_episodes):
-        episode(env, checkpoint_path, agent, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
+        episode(env, checkpoint_path, agent, writer, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
        
 
        
@@ -97,8 +102,9 @@ def startTraining(args,env):
         os.makedirs(directory)
 
     checkpoint_path = os.path.join(directory, 'net_{}_{}'.format('logs', 0))
-
     
+    writer = SummaryWriter()
+
     # create PPO driven agent with hyperparameters
     agent = PPO(state_dim, 
                 action_dim, 
@@ -111,7 +117,10 @@ def startTraining(args,env):
                 params["action_std"])
     
     # train agent
-    training(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=args.episodes, update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"], render=args.replay)
+    training(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=args.episodes, update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"], render=args.replay, writer=writer)
+
+    #close writer
+    writer.close()
 
     #close environment
     env.close()
