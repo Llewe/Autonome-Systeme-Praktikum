@@ -5,7 +5,6 @@ import gym
 from src.PPO import PPO
 import matplotlib.pyplot as plt
 from mlagents_envs.base_env import ActionTuple
-from src.envBuilder import createGymEnv, createUnityEnv, createPureUnityEnv
 
 def episodeVec(env, checkpoint_path, agent,nr_episode=0, render=False, update_timestep=4000, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
     env.reset()
