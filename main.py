@@ -15,7 +15,7 @@ def parseArguments():
     parser.add_argument("-m", "--model",            type=str, required=True, help="name of the model")
     
     # parameter similar to stable_baselines3
-    parser.add_argument("-e", "--episodes",         default=5000,  type=int,           help="training episode number")
+    parser.add_argument("-e", "--episodes",         default=10,  type=int,           help="training episode number")
     parser.add_argument("-us", "--u_step",          default=1000,   type=int,           help="number of steps until update (n_steps/update_timestep)")
     parser.add_argument("-g", "--gamma",            default=0.99,   type=float,         help="discount factor")
     

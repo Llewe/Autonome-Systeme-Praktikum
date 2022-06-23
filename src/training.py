@@ -65,9 +65,10 @@ at the moment without multiple instances at once
 """
 
 def training(env, checkpoint_path, agent, nr_episodes, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq, writer):
-    list_total_return = []
+    totalReward = 0.0
     for nr_episode in range(nr_episodes):
-        episode(env, checkpoint_path, agent, writer, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
+        totalReward += episode(env, checkpoint_path, agent, writer, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
+    return totalReward
        
 
        
@@ -108,7 +109,7 @@ def startTraining(args,env):
     checkpoint_path = os.path.join(directory, 'net_{}_{}'.format('logs', 0))
     
     writer = SummaryWriter()
-
+    
     # create PPO driven agent with hyperparameters
     agent = PPO(state_dim, 
                 action_dim, 
@@ -120,10 +121,13 @@ def startTraining(args,env):
                 params["action_std"])
     
     # train agent
-    training(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=args.episodes, update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"], render=args.replay, writer=writer)
+    endReward = training(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=args.episodes, update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"], render=args.replay, writer=writer)
+    meanRewardOverall = endReward/time_step
+    writer.add_hparams( dict(params),{'hparam/endReward':meanRewardOverall})
 
     #close writer
     writer.close()
 
     #close environment
     env.close()
+
