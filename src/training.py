@@ -68,12 +68,10 @@ def episodeVec(env, checkpoint_path, agent,nr_episode=0, render=False, update_ti
     print(f"Total rewards for episode {nr_episode} is {np.mean(episode_rewards)}")
     
     return episode_rewards
-    
-
 
 """ Trains one episode for an env. There must be only one env to observe
 """
-def episode(env, checkpoint_path, agent,nr_episode=0, render=False, update_timestep=4000, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
+def episodeUnity(env, checkpoint_path, agent,nr_episode=0, render=False, update_timestep=4000, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
     env.reset()
     
     # name of the "unity behavior"
@@ -133,23 +131,65 @@ def episode(env, checkpoint_path, agent,nr_episode=0, render=False, update_times
             
     return episode_rewards
 
+def episodeGym(env, checkpoint_path, agent,nr_episode=0, render=False, update_timestep=4000, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
+    state = env.reset()
+    total_return = 0
+    done = False
+    time_step = 0
+   
+    while not done:
+        if render:
+            env.render()
+                
+        # 1. Select action according to policy
+        action = agent.select_action(state)
+       
+        # 2. Execute selected action
+        next_state, reward, done, _ = env.step(action)
+        
+        # 3. Update buffer
+        agent.buffer.rewards.append(reward)         
+        agent.buffer.is_terminals.append(done)
+  
+        # 4. Integrate new experience into agent
+        if time_step % update_timestep == 1:      
+            agent.update()
+              
+              
+        if time_step % action_std_decay_freq == 1:
+            agent.decay_action_std(action_std_decay_rate, min_action_std)
+        
+        state = next_state
+        total_return += reward
+        time_step += 1
+
+        if time_step % save_model_freq == 0:
+            agent.save(checkpoint_path)
+    
+    return total_return
 
 """
 at the moment without multiple instances at once
 """
-
-def training(env, checkpoint_path, agent, nr_episodes, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq):
+def trainingUnity(env, checkpoint_path, agent, nr_episodes, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq):
     list_total_return = []
     for nr_episode in range(nr_episodes):
-        reward = episode(env, checkpoint_path, agent, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
+        reward = episodeUnity(env, checkpoint_path, agent, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
         list_total_return.append(reward)
         if len(list_total_return) == 20:
             print(f"Total rewards for episode {nr_episode-19}-{nr_episode+1} is {np.mean(list_total_return)}")
             list_total_return.clear()
        
-
+def trainingGym(env, checkpoint_path, agent, nr_episodes, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq):
+    list_total_return = []
+    for nr_episode in range(nr_episodes):
+        reward = episodeGym(env, checkpoint_path, agent, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
+        list_total_return.append(reward)
+        if len(list_total_return) == 20:
+            print(f"Total rewards for episode {nr_episode-19}-{nr_episode+1} is {np.mean(list_total_return)}")
+            list_total_return.clear()
        
-    
+ 
 def startTraining(args,env,state_dim,action_dim):            
 
     params = {}
@@ -189,15 +229,11 @@ def startTraining(args,env,state_dim,action_dim):
                 params["action_std"])
     print(f"state_dim {state_dim}, action_dim {action_dim}")
     # train agent
-    training(env=env,
-             checkpoint_path=checkpoint_path,
-             agent=agent, nr_episodes=args.episodes,
-             update_timestep = params["update_timestep"],
-             action_std_decay_rate=params["action_std_decay_rate"],
-             min_action_std=params["min_action_std"],
-             action_std_decay_freq=params["action_std_decay_freq"],
-             save_model_freq=params["save_model_freq"],
-             render=args.replay)
-
+    if args.env == "unity":
+        trainingUnity(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=args.episodes, update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"], render=args.replay)
+    elif args.env == "gym" or args.env == "unity-gym":
+        trainingGym(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=args.episodes, update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"], render=args.replay)
+    else:
+        print("unknown env. Falling back to gym env")
     #close environment
     env.close()

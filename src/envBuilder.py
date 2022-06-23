@@ -79,6 +79,7 @@ def buildFromArgs(args):
     noGraphics = not args.replay
     env, obsDim,actDim = createUnityEnv(name=name,no_graphics=noGraphics)
   elif args.env == "unity-gym":
+    noGraphics = not args.replay
     env, obsDim,actDim = createUnityGymEnv(name=name,no_graphics=noGraphics)
   else:
     print("unknown env. Falling back to gym env")

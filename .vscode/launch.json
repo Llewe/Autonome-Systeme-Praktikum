@@ -39,7 +39,7 @@
       "console": "integratedTerminal",
       "args": [
         "-env",
-        "unity",
+        "unity-gym",
         "-m",
         "test",
         "-e",
