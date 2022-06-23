@@ -66,7 +66,6 @@ def training(env, checkpoint_path, agent, nr_episodes, render, update_timestep, 
 def startTraining(args,env):            
 
     params = {}
-    params["has_continuous_action_space"] = True
     params["update_timestep"] = args.u_step #64
     params["K_epochs"] = args.k_epochs  #30         # should probably be between [3, 30]                       
     params["eps_clip"] = args.epsilon_clip #0.2     # should probably be between [0.1, 0.3]    
@@ -86,11 +85,7 @@ def startTraining(args,env):
     
     state_dim = env.observation_space[0].shape[0]
 
-    if params["has_continuous_action_space"]:
-        action_dim = env.action_space.shape[0]
-    
-    else:
-        action_dim = env.action_space.n
+    action_dim = env.action_space.shape[0]
 
     # create directory and file to save checkpoint to
     directory = "PPO_preTrained"
@@ -113,7 +108,6 @@ def startTraining(args,env):
                 params["gamma"], 
                 params["K_epochs"], 
                 params["eps_clip"], 
-                params["has_continuous_action_space"], 
                 params["action_std"])
     
     # train agent
