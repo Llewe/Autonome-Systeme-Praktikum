@@ -1,9 +1,6 @@
 import os
-from tkinter.tix import Tree
 import numpy as np
-import gym
 from src.PPO import PPO
-import matplotlib.pyplot as plt
 from mlagents_envs.base_env import ActionTuple
 
 def episodeVec(env, checkpoint_path, agent,nr_episode=0, render=False, update_timestep=4000, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
@@ -73,45 +70,48 @@ def episodeVec(env, checkpoint_path, agent,nr_episode=0, render=False, update_ti
     return episode_rewards
     
 
+
+""" Trains one episode for an env. There must be only one env to observe
+"""
 def episode(env, checkpoint_path, agent,nr_episode=0, render=False, update_timestep=4000, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
     env.reset()
     
-    behavior_name = list(env.behavior_specs)[0]
-    decision_steps, terminal_steps = env.get_steps(behavior_name)
-    tracked_agent = -1 # -1 indicates not yet tracking
-    done = False # For the tracked_agent
-    episode_rewards = 0 # For the tracked_agent
+    # name of the "unity behavior"
+    bName = list(env.behavior_specs)[0]
+    
+    activeEnvs, termEnvs = env.get_steps(bName)
+    
+    # this uses only one env at a time => we only use env 0
+    envId = 0 #
+    done = False
+    
+    episode_rewards = 0
     time_step = 0
     while not done:
-        # Track the first agent we see if not tracking
-        # Note : len(decision_steps) = [number of agents that requested a decision]
-        if tracked_agent == -1 and len(decision_steps) >= 1:
-            tracked_agent = decision_steps.agent_id[3]
-            print(f"set tracked_agent {tracked_agent}, lenght = {len(decision_steps)}")
-        elif len(decision_steps) == 0:
-            print(f"decision_length = {len(decision_steps)}")
-            break
- 
-        # Generate an action for all agents
-        # print(f"decision_steps {decision_steps.obs}")
-        action = agent.select_action(decision_steps.obs[0][tracked_agent])
-        # print(f"action {type(action)} values: {action}")
+        
+        # Generate an action for all envs
+        action = agent.select_action(activeEnvs[envId].obs)
+        
+        # Convert action to a "unity" readable action
         action = ActionTuple(np.array([action], dtype=np.float32))
         # Set the actions
-        env.set_action_for_agent(behavior_name,tracked_agent, action)
+        env.set_action_for_agent(bName,envId, action)
 
         # Move the simulation forward
         env.step()
 
         # Get the new simulation results
-        decision_steps, terminal_steps = env.get_steps(behavior_name)
+        activeEnvs, termEnvs = env.get_steps(bName)
         
-        
-        if tracked_agent in decision_steps: # The agent requested a decision
-            reward = decision_steps[tracked_agent].reward
-        if tracked_agent in terminal_steps: # The agent terminated its episode
-            reward = terminal_steps[tracked_agent].reward
+        reward = 0 
+        if envId in activeEnvs: # The agent requested a decision
+            reward += activeEnvs[envId].reward
+        if envId in termEnvs: # The agent terminated its episode
+            reward += termEnvs[envId].reward
             done = True
+        
+        if envId not in activeEnvs and envId not in termEnvs:
+            print("Carefull enviId wasn't present")
             
         # 3. Update buffer
         agent.buffer.rewards.append(reward)         
@@ -131,8 +131,6 @@ def episode(env, checkpoint_path, agent,nr_episode=0, render=False, update_times
         if time_step % save_model_freq == 0:
             agent.save(checkpoint_path)
             
-    print(f"Total rewards for episode {nr_episode} is {episode_rewards}")
-    
     return episode_rewards
 
 
@@ -143,12 +141,16 @@ at the moment without multiple instances at once
 def training(env, checkpoint_path, agent, nr_episodes, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq):
     list_total_return = []
     for nr_episode in range(nr_episodes):
-        episodeVec(env, checkpoint_path, agent, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
+        reward = episode(env, checkpoint_path, agent, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
+        list_total_return.append(reward)
+        if len(list_total_return) == 20:
+            print(f"Total rewards for episode {nr_episode-19}-{nr_episode+1} is {np.mean(list_total_return)}")
+            list_total_return.clear()
        
 
        
     
-def startTraining(args,env):            
+def startTraining(args,env,state_dim,action_dim):            
 
     params = {}
     params["has_continuous_action_space"] = True
@@ -164,19 +166,6 @@ def startTraining(args,env):
     params["action_std_decay_freq"] = int(2.5e5)    # action standard deviation decay frequency
     params["save_model_freq"] = int(1e1)            # save model to checkpoint frequency 
 
-    # start environment
-    # no graphics: faster, no visual rendering 
-    #env = createUnityEnv(no_graphics=True)
-    #env = gym.make('CartPole-v1')
-    
-   # state_dim = env.observation_space.shape[0]
-
-   # if params["has_continuous_action_space"]:
-  #      action_dim = env.action_space.shape[0]
-    
-   # else:
-   #     action_dim = env.action_space.n
-
     # create directory and file to save checkpoint to
     directory = "PPO_preTrained"
     if not os.path.exists(directory):
@@ -188,10 +177,9 @@ def startTraining(args,env):
 
     checkpoint_path = os.path.join(directory, 'net_{}_{}'.format('logs', 0))
 
-    
     # create PPO driven agent with hyperparameters
-    agent = PPO(8,#state_dim, 
-                2,#action_dim, 
+    agent = PPO(state_dim, 
+                action_dim, 
                 params["lr_actor"], 
                 params["lr_critic"], 
                 params["gamma"], 
@@ -199,9 +187,17 @@ def startTraining(args,env):
                 params["eps_clip"], 
                 params["has_continuous_action_space"], 
                 params["action_std"])
-    #print(f"state_dim {state_dim}, action_dim {action_dim}")
+    print(f"state_dim {state_dim}, action_dim {action_dim}")
     # train agent
-    training(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=args.episodes, update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"], render=args.replay)
+    training(env=env,
+             checkpoint_path=checkpoint_path,
+             agent=agent, nr_episodes=args.episodes,
+             update_timestep = params["update_timestep"],
+             action_std_decay_rate=params["action_std_decay_rate"],
+             min_action_std=params["min_action_std"],
+             action_std_decay_freq=params["action_std_decay_freq"],
+             save_model_freq=params["save_model_freq"],
+             render=args.replay)
 
     #close environment
     env.close()

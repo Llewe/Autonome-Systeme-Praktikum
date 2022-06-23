@@ -36,7 +36,7 @@ args = parseArguments()
 
 modelName = args.model
 
-env = buildFromArgs(args)
+env, obsDim,actDim = buildFromArgs(args)
 
 if args.demo:
     if args.replay:
@@ -48,6 +48,6 @@ else:
         print("Replay mode for non-demo not implemented yet")
     else:
         #Trainng mode
-        startTraining(args,env)
+        startTraining(args,env, obsDim,actDim)
     
 #tracker.stop()
