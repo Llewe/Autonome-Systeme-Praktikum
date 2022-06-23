@@ -73,7 +73,7 @@ def startTraining(args,env):
     params["lr_actor"] = args.lr_actor #0.0003    
     params["lr_critic"] = args.lr_critic #0.001
     params["action_std"] = args.action_std #0.6  
-    params["action_std_decay_rate"] = 0.05          # action standard deviation decay rate
+    params["action_std_decay_rate"] = 0.0001          # action standard deviation decay rate
     params["min_action_std"] = 0.1                  # minimum action standard deviation
     params["action_std_decay_freq"] = int(2.5e5)    # action standard deviation decay frequency
     params["save_model_freq"] = int(1e1)            # save model to checkpoint frequency 
