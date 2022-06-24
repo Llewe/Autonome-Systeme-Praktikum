@@ -2,22 +2,15 @@ import torch
 import torch.nn as nn
 
 from torch.distributions import MultivariateNormal
-from torch.distributions import Categorical
-
-device = torch.device('cpu')
-if(torch.cuda.is_available()): 
-    device = torch.device('cuda:0') 
-    torch.cuda.empty_cache()
-    print("Device set to : " + str(torch.cuda.get_device_name(device)))
-else:
-    print("Device set to : cpu")
 
 class ActorCritic(nn.Module):
-    def __init__(self, state_dim, action_dim, action_std_init):
+    def __init__(self, state_dim, action_dim, action_std_init, device):
         super(ActorCritic, self).__init__()
+        
+        self.device = device
 
         self.action_dim = action_dim
-        self.action_var = torch.full((action_dim,), action_std_init * action_std_init).to(device)
+        self.action_var = torch.full((action_dim,), action_std_init * action_std_init).to(self.device)
         # actor
         self.actor = nn.Sequential(
                         nn.Linear(state_dim, 64),
@@ -36,7 +29,7 @@ class ActorCritic(nn.Module):
                     )
         
     def set_action_std(self, new_action_std):
-        self.action_var = torch.full((self.action_dim,), new_action_std * new_action_std).to(device)
+        self.action_var = torch.full((self.action_dim,), new_action_std * new_action_std).to(self.device)
 
     def forward(self):
         raise NotImplementedError
@@ -55,12 +48,11 @@ class ActorCritic(nn.Module):
         action_mean = self.actor(state)
         
         action_var = self.action_var.expand_as(action_mean)
-        cov_mat = torch.diag_embed(action_var).to(device)
+        cov_mat = torch.diag_embed(action_var).to(self.device)
         dist = MultivariateNormal(action_mean, cov_mat)
         
         # For Single Action Environments.
         if self.action_dim == 1:
-        
             action = action.reshape(-1, self.action_dim)
                 
         action_logprobs = dist.log_prob(action)

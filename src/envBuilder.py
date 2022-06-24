@@ -72,7 +72,7 @@ def createUnityGymEnv(name='3DEllipsoid1-Bouncy',no_graphics=True,time_scale=20.
 create an env from args
 """
 def buildFromArgs(args):
-  name = '3DBall1'
+  name = args.env_name
   if args.env == "gym":
     env, obsDim,actDim = createGymEnv()
   elif args.env == "unity":

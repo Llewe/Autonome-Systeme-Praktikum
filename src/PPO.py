@@ -3,13 +3,7 @@ import torch
 import torch.nn as nn
 from src.ActorCritic import ActorCritic
 
-device = torch.device('cpu')
-if(torch.cuda.is_available()): 
-    device = torch.device('cuda:0') 
-    torch.cuda.empty_cache()
-    print("Device set to : " + str(torch.cuda.get_device_name(device)))
-else:
-    print("Device set to : cpu")
+
 
 class RolloutBuffer:
     def __init__(self):
@@ -27,9 +21,10 @@ class RolloutBuffer:
         del self.is_terminals[:]
         
 class PPO:
-    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std_init=0.06):
+    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std_init, device):
 
         self.action_std = action_std_init
+        self.device = device
 
         self.gamma = gamma
         self.eps_clip = eps_clip
@@ -38,13 +33,13 @@ class PPO:
         
         self.buffer = RolloutBuffer()
      
-        self.policy = ActorCritic(state_dim, action_dim, action_std_init).to(device)
+        self.policy = ActorCritic(state_dim, action_dim, action_std_init,self.device).to(self.device)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy.actor.parameters(), 'lr': lr_actor},
                         {'params': self.policy.critic.parameters(), 'lr': lr_critic}
                     ])
 
-        self.policy_old = ActorCritic(state_dim, action_dim, action_std_init).to(device)
+        self.policy_old = ActorCritic(state_dim, action_dim, action_std_init,self.device).to(self.device)
     
         self.policy_old.load_state_dict(self.policy.state_dict())
         
@@ -63,11 +58,12 @@ class PPO:
             self.action_std = min_action_std
             #print("setting actor output action_std to min_action_std : ", self.action_std)
         self.set_action_std(self.action_std)
+        return self.action_std
 
     def select_action(self, state):
 
         with torch.no_grad():
-            state = torch.FloatTensor(numpy.array(state)).to(device)
+            state = torch.FloatTensor(numpy.array(state)).to(self.device)
             action, action_logprob = self.policy_old.act(state)
 
         self.buffer.states.append(state)
@@ -93,13 +89,13 @@ class PPO:
             rewards.insert(0, discounted_reward)
        
         # Normalizing the rewards
-        rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
+        rewards = torch.tensor(rewards, dtype=torch.float32).to(self.device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
        
         # convert list to tensor
-        old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
-        old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
-        old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(device)
+        old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(self.device)
+        old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(self.device)
+        old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(self.device)
 
         # Optimize policy for K epochs
         for _ in range(self.K_epochs):

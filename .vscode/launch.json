@@ -39,29 +39,9 @@
       "console": "integratedTerminal",
       "args": [
         "-env",
-        "unity-gym",
+        "unity",
         "-m",
-<<<<<<< HEAD
-        "test",
-        "-e",
-        "50000",
-        "-us",
-        "64",
-        "-g",
-        "0.99",
-        "-lr_a",
-        "8e-03",
-        "-lr_c",
-        "1e-02",
-        "-ke",
-        "10",
-        "-e_clip",
-        "0.2",
-        "-a_std",
-        "0.6"
-=======
         "test"
->>>>>>> changed-parameters
       ],
       "justMyCode": true
     }
