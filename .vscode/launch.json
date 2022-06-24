@@ -41,6 +41,7 @@
         "-env",
         "unity-gym",
         "-m",
+<<<<<<< HEAD
         "test",
         "-e",
         "50000",
@@ -58,6 +59,9 @@
         "0.2",
         "-a_std",
         "0.6"
+=======
+        "test"
+>>>>>>> changed-parameters
       ],
       "justMyCode": true
     }

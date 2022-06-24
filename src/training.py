@@ -2,6 +2,9 @@ import os
 import numpy as np
 from src.PPO import PPO
 from mlagents_envs.base_env import ActionTuple
+import matplotlib.pyplot as plt
+from src.envBuilder import createGymEnv, createUnityEnv
+from torch.utils.tensorboard import SummaryWriter
 
 def episodeVec(env, checkpoint_path, agent,nr_episode=0, render=False, update_timestep=4000, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
     env.reset()
@@ -131,12 +134,26 @@ def episodeUnity(env, checkpoint_path, agent,nr_episode=0, render=False, update_
             
     return episode_rewards
 
-def episodeGym(env, checkpoint_path, agent,nr_episode=0, render=False, update_timestep=4000, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
+#def episodeGym(env, checkpoint_path, agent,nr_episode=0, render=False, update_timestep=4000, action_std_decay_rate = 0.01, min_action_std = 0.001, action_std_decay_freq = int(2.5e5), save_model_freq = int(1e1)):
+
+
+time_step = 0
+
+def episode(env, checkpoint_path,
+            agent,
+            writer,
+            nr_episode=0,
+            render=False,
+            update_timestep=20, 
+            action_std_decay_rate = 0.01,
+            min_action_std = 0.001,
+            action_std_decay_freq = int(2.5e5), 
+            save_model_freq = int(1e1)):
     state = env.reset()
     total_return = 0
     done = False
-    time_step = 0
    
+    global time_step
     while not done:
         if render:
             env.render()
@@ -165,6 +182,11 @@ def episodeGym(env, checkpoint_path, agent,nr_episode=0, render=False, update_ti
 
         if time_step % save_model_freq == 0:
             agent.save(checkpoint_path)
+        
+        
+        
+    print(nr_episode, ":", total_return)
+    writer.add_scalar("reward x episode", total_return, nr_episode)
     
     return total_return
 
@@ -179,6 +201,12 @@ def trainingUnity(env, checkpoint_path, agent, nr_episodes, render, update_times
         if len(list_total_return) == 20:
             print(f"Total rewards for episode {nr_episode-19}-{nr_episode+1} is {np.mean(list_total_return)}")
             list_total_return.clear()
+
+def training(env, checkpoint_path, agent, nr_episodes, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq, writer):
+    totalReward = 0.0
+    for nr_episode in range(nr_episodes):
+        totalReward += episode(env, checkpoint_path, agent, writer, nr_episode, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq)
+    return totalReward
        
 def trainingGym(env, checkpoint_path, agent, nr_episodes, render, update_timestep, action_std_decay_rate, min_action_std, action_std_decay_freq, save_model_freq):
     list_total_return = []
@@ -193,7 +221,6 @@ def trainingGym(env, checkpoint_path, agent, nr_episodes, render, update_timeste
 def startTraining(args,env,state_dim,action_dim):            
 
     params = {}
-    params["has_continuous_action_space"] = True
     params["update_timestep"] = args.u_step #64
     params["K_epochs"] = args.k_epochs  #30         # should probably be between [3, 30]                       
     params["eps_clip"] = args.epsilon_clip #0.2     # should probably be between [0.1, 0.3]    
@@ -201,10 +228,19 @@ def startTraining(args,env,state_dim,action_dim):
     params["lr_actor"] = args.lr_actor #0.0003    
     params["lr_critic"] = args.lr_critic #0.001
     params["action_std"] = args.action_std #0.6  
-    params["action_std_decay_rate"] = 0.0005          # action standard deviation decay rate
-    params["min_action_std"] = 0.1                  # minimum action standard deviation
+    params["action_std_decay_rate"] = 0.0005         # action standard deviation decay rate
+    params["min_action_std"] = 0.001                  # minimum action standard deviation
     params["action_std_decay_freq"] = int(2.5e5)    # action standard deviation decay frequency
     params["save_model_freq"] = int(1e1)            # save model to checkpoint frequency 
+
+    # start environment
+    # no graphics: faster, no visual rendering 
+    #env = createUnityEnv(no_graphics=True)
+    #env = gym.make('CartPole-v1')
+    
+    state_dim = env.observation_space[0].shape[0]
+
+    action_dim = env.action_space.shape[0]
 
     # create directory and file to save checkpoint to
     directory = "PPO_preTrained"
@@ -216,7 +252,9 @@ def startTraining(args,env,state_dim,action_dim):
         os.makedirs(directory)
 
     checkpoint_path = os.path.join(directory, 'net_{}_{}'.format('logs', 0))
-
+    
+    writer = SummaryWriter()
+    
     # create PPO driven agent with hyperparameters
     agent = PPO(state_dim, 
                 action_dim, 
@@ -225,15 +263,16 @@ def startTraining(args,env,state_dim,action_dim):
                 params["gamma"], 
                 params["K_epochs"], 
                 params["eps_clip"], 
-                params["has_continuous_action_space"], 
                 params["action_std"])
     print(f"state_dim {state_dim}, action_dim {action_dim}")
     # train agent
-    if args.env == "unity":
-        trainingUnity(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=args.episodes, update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"], render=args.replay)
-    elif args.env == "gym" or args.env == "unity-gym":
-        trainingGym(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=args.episodes, update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"], render=args.replay)
-    else:
-        print("unknown env. Falling back to gym env")
+    endReward = training(env=env, checkpoint_path=checkpoint_path, agent=agent, nr_episodes=args.episodes, update_timestep = params["update_timestep"], action_std_decay_rate=params["action_std_decay_rate"], min_action_std=params["min_action_std"], action_std_decay_freq=params["action_std_decay_freq"], save_model_freq=params["save_model_freq"], render=args.replay, writer=writer)
+    meanRewardOverall = endReward/time_step
+    writer.add_hparams( dict(params),{'hparam/endReward':meanRewardOverall})
+
+    #close writer
+    writer.close()
+
     #close environment
     env.close()
+
