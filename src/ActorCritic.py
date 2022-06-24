@@ -30,9 +30,9 @@ class ActorCritic(nn.Module):
         self.critic = nn.Sequential(
                         nn.Linear(state_dim, 64),
                         nn.Tanh(),
-                        nn.Linear(64, 64),
+                        nn.Linear(64, 32),
                         nn.Tanh(),
-                        nn.Linear(64, 1)
+                        nn.Linear(32, 1)
                     )
         
     def set_action_std(self, new_action_std):
