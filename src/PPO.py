@@ -19,9 +19,15 @@ class RolloutBuffer:
         del self.logprobs[:]
         del self.rewards[:]
         del self.is_terminals[:]
+
+class TempBuffer:
+    def __init__(self):
+        self.action = {}
+        self.state = {}
+        self.logprob = {}
         
 class PPO:
-    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std_init, device):
+    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std_init, device,simulations=1):
 
         self.action_std = action_std_init
         self.device = device
@@ -32,6 +38,7 @@ class PPO:
      
         
         self.buffer = RolloutBuffer()
+        self.tempBuffer = numpy.full(simulations,TempBuffer())
      
         self.policy = ActorCritic(state_dim, action_dim, action_std_init,self.device).to(self.device)
         self.optimizer = torch.optim.Adam([
@@ -60,24 +67,40 @@ class PPO:
         self.set_action_std(self.action_std)
         return self.action_std
 
-    def select_action(self, state):
-
+    def select_action(self, state, simulation=0):
         with torch.no_grad():
             state = torch.FloatTensor(numpy.array(state)).to(self.device)
+            
             action, action_logprob = self.policy_old.act(state)
-
-        self.buffer.states.append(state)
-        self.buffer.actions.append(action)
-        self.buffer.logprobs.append(action_logprob)
-
+            
+        self.tempBuffer[simulation].state = state
+        self.tempBuffer[simulation].action = action
+        self.tempBuffer[simulation].logprob = action_logprob
+        
         return action.detach().cpu().numpy().flatten()
+
+    def save_action_reward(self, reward, is_terminal, simulation=0):
+        if self.tempBuffer[simulation].state is None:
+            # "delete the results" since the temp buffer was cleared from the update method => dont update with observations from old networks
+            return
+        
+        self.buffer.states.append(self.tempBuffer[simulation].state)
+        self.buffer.actions.append(self.tempBuffer[simulation].action)
+        self.buffer.logprobs.append(self.tempBuffer[simulation].logprob)
+        self.buffer.rewards.append(reward)
+        self.buffer.is_terminals.append(is_terminal)
+        
+    def resetTempBuffer(self):
+        for i in range(len(self.tempBuffer)):
+            self.tempBuffer[i].state = None
+
 
     def update(self):
       
         # Monte Carlo estimate of returns
       
         rewards = []
-       
+        
         if self.buffer.is_terminals[-1]:
             discounted_reward = 0
         else:
@@ -127,6 +150,8 @@ class PPO:
         
         # clear buffer
         self.buffer.clear()
+        
+        self.resetTempBuffer()
     
     def save(self, checkpoint_path):
         torch.save(self.policy_old.state_dict(), checkpoint_path)

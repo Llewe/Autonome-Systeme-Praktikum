@@ -10,7 +10,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
       "console": "integratedTerminal",
-      "args": ["-m", "3DEllipsoid1-Bouncy", "-d", "-env", "unity", "-e", "50"],
+      "args": ["-tag", "3DEllipsoid1-Bouncy", "-d", "-env", "unity", "-e", "50"],
       "justMyCode": true
     },
     {
@@ -20,7 +20,7 @@
       "program": "${workspaceFolder}/main.py",
       "console": "integratedTerminal",
       "args": [
-        "-m",
+        "-tag",
         "3DEllipsoid1-Bouncy",
         "-d",
         "-env",
@@ -40,7 +40,7 @@
       "args": [
         "-env",
         "unity",
-        "-m",
+        "-tag",
         "test"
       ],
       "justMyCode": true
