@@ -20,10 +20,12 @@ def episode(env, checkpoint_path,
             save_model_freq = int(1e1)):
     state = env.reset()
     total_return = 0
+    time_horizon = int(3e6)
     done = False
    
     global time_step
-    while not done:
+    action_std_decay_freq = 1000
+    while time_step < time_horizon:
         if render:
             env.render()
                 
@@ -31,27 +33,29 @@ def episode(env, checkpoint_path,
         action = agent.select_action(state)
        
         # 2. Execute selected action
-        next_state, reward, done, _ = env.step(action)
+        state, reward, done, _ = env.step(action)
         
         # 3. Update buffer
         agent.buffer.rewards.append(reward)         
         agent.buffer.is_terminals.append(done)
   
-        # 4. Integrate new experience into agent
-        if time_step % update_timestep == 1:      
-            agent.update()
-              
-              
-        if time_step % action_std_decay_freq == 1:
-            agent.decay_action_std(action_std_decay_rate, min_action_std)
-        
-        state = next_state
-        total_return += reward
         time_step += 1
+        total_return += reward
 
+        # 4. Integrate new experience into agent
+        if time_step % update_timestep == 0:      
+            agent.update()
+
+
+        if time_step % action_std_decay_freq == 0:
+            agent.decay_action_std(action_std_decay_rate, min_action_std)         
+
+        
         if time_step % save_model_freq == 0:
             agent.save(checkpoint_path)
         
+        if done:
+            break
         
         
     print(nr_episode, ":", total_return)
@@ -82,7 +86,7 @@ def startTraining(args,env):
     params["gamma"] = args.gamma #0.99              # probably 0.99 at its best  
     params["lr_actor"] = args.lr_actor #0.0003    
     params["lr_critic"] = args.lr_critic #0.001
-    params["action_std"] = args.action_std #0.6  
+    params["action_std"] = args.action_std #0.8  
     params["action_std_decay_rate"] = 0.0005         # action standard deviation decay rate
     params["min_action_std"] = 0.001                  # minimum action standard deviation
     params["action_std_decay_freq"] = int(2.5e5)    # action standard deviation decay frequency

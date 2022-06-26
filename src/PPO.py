@@ -56,7 +56,6 @@ class PPO:
         self.policy_old.set_action_std(new_action_std)
 
     def decay_action_std(self, action_std_decay_rate, min_action_std):
-
         self.action_std = self.action_std - action_std_decay_rate
         #self.action_std = round(self.action_std, 4)
         if (self.action_std <= min_action_std):
@@ -79,13 +78,14 @@ class PPO:
     def update(self):
       
         # Monte Carlo estimate of returns
-      
+        
         rewards = []
        
         if self.buffer.is_terminals[-1]:
             discounted_reward = 0
         else:
             discounted_reward = self.policy_old.critic(self.buffer.states[-1]).item()
+      
 
         for reward in reversed(self.buffer.rewards):
             
