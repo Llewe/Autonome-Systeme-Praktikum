@@ -31,3 +31,13 @@ Load webpage `carbonboard --filepath="./out/emissions.csv"`
 ```
 tensorboard --logdir ./logs --port 9238
 ```
+
+## Slurm
+```
+sbatch --partition=All --cpus-per-task=4 slurm_runner.sh
+```
+
+### Fix return code 127
+ Error Message
+ > mlagents_envs.exception.UnityEnvironmentException: Environment shut down with return code 127
+ 
