@@ -89,6 +89,7 @@ class PPO:
         self.buffer.logprobs.append(self.tempBuffer[simulation].logprob)
         self.buffer.rewards.append(reward)
         self.buffer.is_terminals.append(is_terminal)
+    
         
     def resetTempBuffer(self):
         for i in range(len(self.tempBuffer)):
@@ -101,16 +102,17 @@ class PPO:
       
         rewards = []
         
-        if self.buffer.is_terminals[-1]:
+        if not self.buffer.is_terminals[-1]:
             discounted_reward = 0
         else:
             discounted_reward = self.policy_old.critic(self.buffer.states[-1]).item()
 
         for reward in reversed(self.buffer.rewards):
-            
+           
             discounted_reward = reward + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
        
+   
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(self.device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
@@ -133,7 +135,8 @@ class PPO:
             ratios = torch.exp(logprobs - old_logprobs.detach())
 
             # Finding Surrogate Loss
-            advantages = rewards - state_values.detach()   
+            advantages = rewards - state_values.detach()  
+
             surr1 = ratios * advantages
             surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages
 

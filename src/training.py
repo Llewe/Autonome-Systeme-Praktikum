@@ -92,22 +92,22 @@ def trainingUnity(env,
                 min_action_std,
                 action_std_decay_freq):
     
-    time_step = 0
-    
     # name of the "unity behavior"
     bName = list(env.behavior_specs)[0]
     
     # this uses only one env at a time => we only use env 0
     envId = 0
     
+    
     for nr_episode in range(nr_episodes):
         env.reset()
         activeEnvs, termEnvs = env.get_steps(bName)
-        
+        time_step = 0    
         reward_episode = 0
         done = False
         
-        while not done:
+        while time_step < 1000:
+            
             # Generate 
             # an action for all envs
             action = agent.select_action(activeEnvs[envId].obs)
@@ -117,7 +117,7 @@ def trainingUnity(env,
             
             # Set the actions
             env.set_action_for_agent(bName,envId, action)
-
+            
             # Move the simulation forward
             env.step()
 
@@ -138,8 +138,8 @@ def trainingUnity(env,
             agent.save_action_reward(reward,done)
   
             # 4. Integrate new experience into agent
-            if time_step % update_timestep == 1:      
-                agent.update()
+            #if time_step % update_timestep == 1:      
+                #agent.update()
                 
             if time_step % action_std_decay_freq == 1:
                 action_std = agent.decay_action_std(action_std_decay_rate, min_action_std)
@@ -147,6 +147,9 @@ def trainingUnity(env,
                   
             reward_episode += reward
             time_step += 1
+            
+            if done:
+                agent.update()
 
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD, reward_episode, nr_episode)
