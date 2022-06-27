@@ -198,7 +198,7 @@ def startTraining(args, env, state_dim, action_dim, simCount):
     logWriter.add_text(CONST_LOG_HYPER_PARAMETERS,str(args))
     
     device = torch.device('cpu')
-    if(torch.cuda.is_available() and not args.cpu): 
+    if(torch.cuda.is_available() and not args.force_cpu): 
         device = torch.device('cuda:0') 
         torch.cuda.empty_cache()
         print("Device set to : " + str(torch.cuda.get_device_name(device)))
