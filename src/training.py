@@ -94,7 +94,10 @@ def trainingUnity(env,
                 min_action_std,
                 action_std_decay_freq):
     
+    # for plotting of action distribution
     action_dist = []
+    plot_histogram_step = 0
+    
     
     time_step = 0
 
@@ -115,6 +118,8 @@ def trainingUnity(env,
             # Generate 
             # an action for all envs
             action = agent.select_action(activeEnvs[envId].obs)
+            
+            # add action for plotting
             action_dist.append(action)
            
             # Convert action to a "unity" readable action
@@ -156,9 +161,12 @@ def trainingUnity(env,
             
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD, reward_episode, nr_episode)
-    
-    action_dist = np.array(action_dist)
-    logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_dist))    
+
+        # plot action distribution
+        if nr_episode % (0.2 * nr_episodes) == 1: # number of sessions
+            action_freq = np.array(action_dist)
+            logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step)    
+            plot_histogram_step += 1
         
 
 def trainingGym(env,
@@ -171,7 +179,10 @@ def trainingGym(env,
                 action_std_decay_freq):
     
     time_step = 0
+    
+    # plot action distribution
     action_dist = []
+    plot_histogram_step = 0
     
     for nr_episode in range(nr_episodes):
         state = env.reset()
@@ -181,6 +192,8 @@ def trainingGym(env,
         while not done:
             # 1. Select action according to policy
             action = agent.select_action(state)
+            
+            # add action for plotting
             action_dist.append(action)
             
             # 2. Execute selected action
@@ -205,8 +218,11 @@ def trainingGym(env,
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD, reward_episode, nr_episode)
         
-    action_dist = np.array(action_dist)
-    logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_dist))   
+        # plot action distribution
+        if nr_episode % (0.2 * nr_episodes) == 1: # number of sessions
+            action_freq = np.array(action_dist)
+            logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step)    
+            plot_histogram_step += 1
   
 def startTraining(args, env, state_dim, action_dim, simCount):            
  
