@@ -5,14 +5,17 @@ from src.PPO import PPO
 from mlagents_envs.base_env import ActionTuple
 import torch
 from torch.utils.tensorboard import SummaryWriter
+from datetime import datetime
+
+import platform
 
 import os
 
-CONST_LOG_ACTION_STD = "action_std"
-CONST_LOG_EPISODE_REWARD = "reward x episode"
-CONST_LOG_TIMESTEP_REWARD = "reward x timestep"
-CONST_LOG_HYPER_PARAMETERS = "h_param"
-CONST_LOG_ACTION_FREQUENCY = "action_frequency"
+CONST_LOG_ACTION_STD = "training/action_std x timestep"
+CONST_LOG_EPISODE_REWARD = "training/reward x episode"
+CONST_LOG_TIMESTEP_REWARD = "training/reward x timestep"
+CONST_LOG_HYPER_PARAMETERS = "training/h_param"
+CONST_LOG_ACTION_FREQUENCY = "training/action_frequency"
 
 def trainingUnityVec(env,
                 agent,
@@ -160,7 +163,7 @@ def trainingUnity(env,
                 logWriter.add_scalar(CONST_LOG_ACTION_STD, action_std, time_step)     
                   
             reward_episode += reward
-            logWriter.add_scalar(CONST_LOG_TIMESTEP_REWARD, reward_episode, time_step)
+            logWriter.add_scalar(CONST_LOG_TIMESTEP_REWARD, reward, time_step)
             time_step += 1
             
         print(nr_episode, ":", reward_episode)
@@ -217,6 +220,7 @@ def trainingGym(env,
             
             state = next_state
             reward_episode += reward
+            logWriter.add_scalar(CONST_LOG_TIMESTEP_REWARD, reward, time_step)
             time_step += 1
             
         print(nr_episode, ":", reward_episode)
@@ -229,7 +233,9 @@ def trainingGym(env,
             plot_histogram_step += 1
   
 def startTraining(args, env, state_dim, action_dim, simCount):            
-    logDir = f"out/logs/{args.tag}"
+    osName = platform.node()
+    currentTimeInSec = int(round(datetime.now().timestamp()))
+    logDir = f"runs/logs/{args.tag}/{osName}-{currentTimeInSec}"
     if not os.path.exists(logDir):
         os.makedirs(logDir)
 
