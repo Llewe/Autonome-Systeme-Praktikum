@@ -1,8 +1,12 @@
+from ast import arg
 import numpy as np
+from src.algorithms.RandomAgent import RandomAgent
 from src.PPO import PPO
 from mlagents_envs.base_env import ActionTuple
 import torch
 from torch.utils.tensorboard import SummaryWriter
+
+import os
 
 CONST_LOG_ACTION_STD = "action_std"
 CONST_LOG_EPISODE_REWARD = "reward x episode"
@@ -225,11 +229,14 @@ def trainingGym(env,
             plot_histogram_step += 1
   
 def startTraining(args, env, state_dim, action_dim, simCount):            
- 
-    logWriter = SummaryWriter()
+    logDir = f"out/logs/{args.tag}"
+    if not os.path.exists(logDir):
+        os.makedirs(logDir)
+
+    logWriter = SummaryWriter(log_dir=logDir)
+    
     logWriter.add_text(CONST_LOG_HYPER_PARAMETERS,str(args))
-    
-    
+
     device = torch.device('cpu')
     if(torch.cuda.is_available() and not args.force_cpu): 
         device = torch.device('cuda:0') 
@@ -238,10 +245,10 @@ def startTraining(args, env, state_dim, action_dim, simCount):
     else:
         print("Device set to : cpu")
     
-    # create PPO driven agent with hyperparameters
-    int 
-    
-    agent = PPO(state_dim, 
+
+    if (args.agent == "ppo"):
+        # create PPO driven agent with hyperparameters
+        agent = PPO(state_dim, 
                 action_dim,
                 args.lr_actor, 
                 args.lr_critic, 
@@ -251,6 +258,10 @@ def startTraining(args, env, state_dim, action_dim, simCount):
                 args.action_std,
                 device,
                 simCount)
+    elif (args.agent == "random_agent"):
+        agent = RandomAgent(state_dim,action_dim)
+    else:
+        print(f"the agend isn't know: {args.agent}")
 
     if args.env == "unity":
         if simCount == 1:
