@@ -69,7 +69,7 @@ def createUnityEnv(name='3DEllipsoid1-Bouncy',no_graphics=True,time_scale=20.,rn
 create a unity domain with the gym wrapper
 """
 def createUnityGymEnv(name='3DEllipsoid1-Bouncy',no_graphics=True,time_scale=20.,rngMass=False,rngGravity=False,rngScale=False,individualScale=False):
-  envUnity,_,_ = createUnityEnv(name,no_graphics,time_scale,rngMass,rngGravity,rngScale,individualScale)
+  envUnity,_,_,_ = createUnityEnv(name,no_graphics,time_scale,rngMass,rngGravity,rngScale,individualScale)
   env = UnityToGymWrapper(envUnity)
   return env, env.observation_space.shape[0], env.action_space.shape[0], 1
 

@@ -1,7 +1,7 @@
 from codecarbon import OfflineEmissionsTracker
-from src.trainingDemo import replayDemo,trainingDemo
 from src.envBuilder import buildFromArgs
 from src.training import startTraining
+from src.trainingBaseline import trainBaselinePPO
 
 import argparse
 
@@ -11,12 +11,13 @@ def parseArguments():
     parser.add_argument("-r",   "--replay",         action="store_true",            help="enable replay mode")
     parser.add_argument("-cpu",   "--force_cpu",    action="store_true",            help="forces to use the cpu")
     parser.add_argument("-env", "--env",            default="unity",  type=str,     help="set the enviroment (gym,unity)")
-    parser.add_argument("-env_n", "--env_name",     default="3DBall12",  type=str,     help="name the domain name")
+    parser.add_argument("-env_n", "--env_name",     default="3DBall1",  type=str,   help="name the domain name")
+    parser.add_argument("-agent",   "--agent",         default="ppo",  type=str,       help="set the agent type here. (ppo,random_agent)")
     
     parser.add_argument("-tag", "--tag",            type=str, required=True, help="name/tag of the run")
     
     #hyperparameter
-    parser.add_argument("-e", "--episodes",                         default=100000,  type=int,           help="training episode number")
+    parser.add_argument("-e", "--episodes",                         default=10000,  type=int,           help="training episode number")
     parser.add_argument("-us", "--update_timestep",                 default=1000,   type=int,           help="number of steps until update (n_steps/update_timestep) e.g. max_ep_len * 4")
     parser.add_argument("-g", "--gamma",                            default=0.99,   type=float,         help="discount factor, probably 0.99 at its best")
     parser.add_argument("-lr_a", "--lr_actor",                      default=1e-03,  type=float,         help="learn rate of the actor")
@@ -41,10 +42,7 @@ modelName = args.tag
 env, obsDim, actDim, simCount = buildFromArgs(args)
 
 if args.demo:
-    if args.replay:
-        replayDemo(env,modelName,True)
-    else:
-        trainingDemo(env,modelName,args.episodes)     
+        trainBaselinePPO(args, env)
 else:
     if args.replay:
         print("Replay mode for non-demo not implemented yet")
