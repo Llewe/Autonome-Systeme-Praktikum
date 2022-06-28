@@ -173,6 +173,8 @@ def trainingUnity(env,
         if nr_episode % (0.2 * nr_episodes) == 1: # number of sessions
             action_freq = np.array(action_dist)
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step)    
+            # clear action buffer after histogram session
+            action_dist = []
             plot_histogram_step += 1
     
     logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step + 1)
@@ -231,7 +233,9 @@ def trainingGym(env,
         # plot action distribution
         if nr_episode % (0.2 * nr_episodes) == 1: # number of sessions
             action_freq = np.array(action_dist)
-            logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step)    
+            logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step) 
+            # clear action buffer after histogram session
+            action_dist = []   
             plot_histogram_step += 1
     
     logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step + 1)
