@@ -41,8 +41,8 @@
       "console": "integratedTerminal",
       "args": [
         "-agent", "random_agent",
-        "-env", "unity",
-        "-tag", "random-agent-unity",
+        "-env", "unity-gym",
+        "-tag", "random-agent-unity-gym",
         "-e", "2000"
       ],
       "justMyCode": true
