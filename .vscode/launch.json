@@ -5,33 +5,6 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Demo-Training",
-      "type": "python",
-      "request": "launch",
-      "program": "${workspaceFolder}/main.py",
-      "console": "integratedTerminal",
-      "args": ["-tag", "3DEllipsoid1-Bouncy", "-d", "-env", "unity", "-e", "50"],
-      "justMyCode": true
-    },
-    {
-      "name": "Demo-Replay",
-      "type": "python",
-      "request": "launch",
-      "program": "${workspaceFolder}/main.py",
-      "console": "integratedTerminal",
-      "args": [
-        "-tag",
-        "3DEllipsoid1-Bouncy",
-        "-d",
-        "-env",
-        "unity",
-        "-r",
-        "-e",
-        "50"
-      ],
-      "justMyCode": true
-    },
-    {
       "name": "PPO-Training",
       "type": "python",
       "request": "launch",
@@ -41,7 +14,36 @@
         "-env",
         "unity",
         "-tag",
-        "test"
+        "ppo"
+      ],
+      "justMyCode": true
+    },
+    {
+      "name": "PPO-Training-Baselines",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "console": "integratedTerminal",
+      "args": [
+        "-d",
+        "-env",
+        "unity-gym",
+        "-tag",
+        "ppo"
+      ],
+      "justMyCode": true
+    },
+    {
+      "name": "PPO-Random-Agent",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "console": "integratedTerminal",
+      "args": [
+        "-agent", "random_agent",
+        "-env", "unity",
+        "-tag", "random-agent-unity",
+        "-e", "2000"
       ],
       "justMyCode": true
     }
