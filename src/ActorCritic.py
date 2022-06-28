@@ -29,8 +29,9 @@ class ActorCritic(nn.Module):
                     )
         
     def set_action_std(self, new_action_std):
-        self.action_var = torch.full((self.action_dim,), new_action_std * new_action_std).to(self.device)
+        self.action_var = torch.full((self.action_dim,), new_action_std).to(self.device)
 
+        
     def forward(self):
         raise NotImplementedError
     

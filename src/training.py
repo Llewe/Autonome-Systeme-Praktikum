@@ -98,23 +98,23 @@ def trainingUnity(env,
     # this uses only one env at a time => we only use env 0
     envId = 0
     
-    
+    time_step = 0    
     for nr_episode in range(nr_episodes):
         env.reset()
         activeEnvs, termEnvs = env.get_steps(bName)
-        time_step = 0    
+        
         reward_episode = 0
         done = False
         
-        while time_step < 1000:
+        while not done:
             
             # Generate 
             # an action for all envs
             action = agent.select_action(activeEnvs[envId].obs)
-        
+            
             # Convert action to a "unity" readable action
             action = ActionTuple(np.array([action], dtype=np.float32))
-            
+         
             # Set the actions
             env.set_action_for_agent(bName,envId, action)
             
@@ -123,7 +123,7 @@ def trainingUnity(env,
 
             # Get the new simulation results
             activeEnvs, termEnvs = env.get_steps(bName)
-        
+            
             reward = 0 
             if envId in activeEnvs: # The agent requested a decision
                 reward += activeEnvs[envId].reward
@@ -138,8 +138,8 @@ def trainingUnity(env,
             agent.save_action_reward(reward,done)
   
             # 4. Integrate new experience into agent
-            #if time_step % update_timestep == 1:      
-                #agent.update()
+            if time_step % update_timestep == 1:      
+                agent.update()
                 
             if time_step % action_std_decay_freq == 1:
                 action_std = agent.decay_action_std(action_std_decay_rate, min_action_std)
@@ -148,8 +148,8 @@ def trainingUnity(env,
             reward_episode += reward
             time_step += 1
             
-            if done:
-                agent.update()
+           
+        #agent.update()
 
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD, reward_episode, nr_episode)
@@ -172,7 +172,6 @@ def trainingGym(env,
         while not done:
             # 1. Select action according to policy
             action = agent.select_action(state)
-        
             # 2. Execute selected action
             next_state, reward, done, _ = env.step(action)
             
@@ -191,7 +190,7 @@ def trainingGym(env,
             state = next_state
             reward_episode += reward
             time_step += 1
-            
+    
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD, reward_episode, nr_episode)
   

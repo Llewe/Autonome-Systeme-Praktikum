@@ -52,6 +52,7 @@ class PPO:
         
         self.MseLoss = nn.MSELoss()
 
+
     def set_action_std(self, new_action_std):
         self.action_std = new_action_std
         self.policy.set_action_std(new_action_std)
@@ -95,9 +96,8 @@ class PPO:
         for i in range(len(self.tempBuffer)):
             self.tempBuffer[i].state = None
 
-
     def update(self):
-      
+
         # Monte Carlo estimate of returns
       
         rewards = []
@@ -106,9 +106,9 @@ class PPO:
             discounted_reward = 0
         else:
             discounted_reward = self.policy_old.critic(self.buffer.states[-1]).item()
+    
 
         for reward in reversed(self.buffer.rewards):
-           
             discounted_reward = reward + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
        
@@ -122,9 +122,11 @@ class PPO:
         old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(self.device)
         old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(self.device)
 
+
         # Optimize policy for K epochs
         for _ in range(self.K_epochs):
-          
+            
+        
             # Evaluating old actions and values
             logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
      
@@ -138,6 +140,7 @@ class PPO:
             advantages = rewards - state_values.detach()  
 
             surr1 = ratios * advantages
+    
             surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages
 
             # final loss of clipped objective PPO
@@ -153,7 +156,6 @@ class PPO:
         
         # clear buffer
         self.buffer.clear()
-        
         self.resetTempBuffer()
     
     def save(self, checkpoint_path):
