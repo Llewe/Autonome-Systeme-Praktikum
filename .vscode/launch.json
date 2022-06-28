@@ -29,7 +29,8 @@
         "-env",
         "unity-gym",
         "-tag",
-        "ppo"
+        "stable_baseline_ext_log",
+        "-e", "150000"
       ],
       "justMyCode": true
     },
@@ -42,8 +43,8 @@
       "args": [
         "-agent", "random_agent",
         "-env", "unity-gym",
-        "-tag", "random-agent-unity-gym",
-        "-e", "2000"
+        "-tag", "stable_basline_extended_logger",
+        "-e", "50000"
       ],
       "justMyCode": true
     }
