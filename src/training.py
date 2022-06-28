@@ -174,6 +174,8 @@ def trainingUnity(env,
             action_freq = np.array(action_dist)
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step)    
             plot_histogram_step += 1
+    
+    logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step)
         
 
 def trainingGym(env,
@@ -231,7 +233,10 @@ def trainingGym(env,
             action_freq = np.array(action_dist)
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step)    
             plot_histogram_step += 1
-  
+    
+    logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step)
+    
+    
 def startTraining(args, env, state_dim, action_dim, simCount):            
     osName = platform.node()
     currentTimeInSec = int(round(datetime.now().timestamp()))
