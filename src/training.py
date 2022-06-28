@@ -153,14 +153,14 @@ def trainingUnity(env,
                 
             if time_step % action_std_decay_freq == 1:
                 action_std = agent.decay_action_std(action_std_decay_rate, min_action_std)
-                logWriter.add_scalar(CONST_LOG_ACTION_STD, action_std, nr_episode)     
+                logWriter.add_scalar(CONST_LOG_ACTION_STD, action_std, time_step)     
                   
             reward_episode += reward
             logWriter.add_scalar(CONST_LOG_TIMESTEP_REWARD, reward_episode, time_step)
             time_step += 1
             
         print(nr_episode, ":", reward_episode)
-        logWriter.add_scalar(CONST_LOG_EPISODE_REWARD, reward_episode, nr_episode)
+        logWriter.add_scalar(CONST_LOG_EPISODE_REWARD, reward_episode, time_step)
 
         # plot action distribution
         if nr_episode % (0.2 * nr_episodes) == 1: # number of sessions
@@ -209,14 +209,14 @@ def trainingGym(env,
                 
             if time_step % action_std_decay_freq == 1:
                 action_std = agent.decay_action_std(action_std_decay_rate, min_action_std)
-                logWriter.add_scalar(CONST_LOG_ACTION_STD, action_std, nr_episode)
+                logWriter.add_scalar(CONST_LOG_ACTION_STD, action_std, time_step)
             
             state = next_state
             reward_episode += reward
             time_step += 1
             
         print(nr_episode, ":", reward_episode)
-        logWriter.add_scalar(CONST_LOG_EPISODE_REWARD, reward_episode, nr_episode)
+        logWriter.add_scalar(CONST_LOG_EPISODE_REWARD, reward_episode, time_step)
         
         # plot action distribution
         if nr_episode % (0.2 * nr_episodes) == 1: # number of sessions
