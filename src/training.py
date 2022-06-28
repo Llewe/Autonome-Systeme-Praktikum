@@ -6,7 +6,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 CONST_LOG_ACTION_STD = "action_std"
 CONST_LOG_EPISODE_REWARD = "reward x episode"
+CONST_LOG_TIMESTEP_REWARD = "reward x timestep"
 CONST_LOG_HYPER_PARAMETERS = "h_param"
+CONST_LOG_ACTION_FREQUENCY = "action_frequency"
 
 def trainingUnityVec(env,
                 agent,
@@ -92,8 +94,10 @@ def trainingUnity(env,
                 min_action_std,
                 action_std_decay_freq):
     
-    time_step = 0
+    action_dist = []
     
+    time_step = 0
+
     # name of the "unity behavior"
     bName = list(env.behavior_specs)[0]
     
@@ -111,7 +115,8 @@ def trainingUnity(env,
             # Generate 
             # an action for all envs
             action = agent.select_action(activeEnvs[envId].obs)
-        
+            action_dist.append(action)
+           
             # Convert action to a "unity" readable action
             action = ActionTuple(np.array([action], dtype=np.float32))
             
@@ -146,10 +151,15 @@ def trainingUnity(env,
                 logWriter.add_scalar(CONST_LOG_ACTION_STD, action_std, nr_episode)     
                   
             reward_episode += reward
+            logWriter.add_scalar(CONST_LOG_TIMESTEP_REWARD, reward_episode, time_step)
             time_step += 1
-
+            
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD, reward_episode, nr_episode)
+    
+    action_dist = np.array(action_dist)
+    logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_dist))    
+        
 
 def trainingGym(env,
                 agent,
@@ -161,6 +171,8 @@ def trainingGym(env,
                 action_std_decay_freq):
     
     time_step = 0
+    action_dist = []
+    
     for nr_episode in range(nr_episodes):
         state = env.reset()
         reward_episode = 0
@@ -169,7 +181,8 @@ def trainingGym(env,
         while not done:
             # 1. Select action according to policy
             action = agent.select_action(state)
-        
+            action_dist.append(action)
+            
             # 2. Execute selected action
             next_state, reward, done, _ = env.step(action)
             
@@ -191,11 +204,15 @@ def trainingGym(env,
             
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD, reward_episode, nr_episode)
+        
+    action_dist = np.array(action_dist)
+    logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_dist))   
   
 def startTraining(args, env, state_dim, action_dim, simCount):            
  
     logWriter = SummaryWriter()
     logWriter.add_text(CONST_LOG_HYPER_PARAMETERS,str(args))
+    
     
     device = torch.device('cpu')
     if(torch.cuda.is_available() and not args.force_cpu): 
