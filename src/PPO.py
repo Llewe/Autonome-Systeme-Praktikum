@@ -4,15 +4,7 @@ import torch.nn as nn
 from src.ActorCritic import ActorCritic
 
 CONST_LOG_REWARD_DISTRIBUTION = "training/reward distribution"
-CONST_LOG_REWARD_DISTRIBUTION_NORMALIZED = "training/reward distribution normalized"
-CONST_LOG_LOSS = "training/loss"
-CONST_LOG_VALUE_LOSS = "training/value loss"
 CONST_LOG_ENTROPY = "training/entropy"
-CONST_LOG_CRITIC_LR = "training/critic lr"
-CONST_LOG_ACTOR_LR = "training/actor lr"
-CONST_LOG_STATE_VALUES = "training/state values"
-CONST_LOG_ADVANTAGES = "training/advantages"
-CONST_LOG_SURR2 = "training/surr2"
 
 class RolloutBuffer:
     def __init__(self):
@@ -129,11 +121,7 @@ class PPO:
         if(self.log_step % 5 == 0):
             logWriter.add_histogram(CONST_LOG_REWARD_DISTRIBUTION, rewards, global_step = self.log_step)  
             
-        #rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
-        
-        #if(self.log_step % 5 == 0):
-            #logWriter.add_histogram(CONST_LOG_REWARD_DISTRIBUTION_NORMALIZED, rewards, global_step = self.log_step)    
-       
+
         # convert list to tensor
         old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(self.device)
         old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(self.device)
@@ -148,30 +136,21 @@ class PPO:
             logWriter.add_scalar(CONST_LOG_ENTROPY, torch.mean(dist_entropy), self.log_step)
             # match state_values tensor dimensions with rewards tensor
             state_values = torch.squeeze(state_values)
-            logWriter.add_scalar(CONST_LOG_STATE_VALUES, torch.mean(state_values), self.log_step)
           
             # Finding the ratio (pi_theta / pi_theta__old)
             ratios = torch.exp(logprobs - old_logprobs.detach())
 
             # Finding Surrogate Loss
             advantages = rewards - state_values.detach()  
-            logWriter.add_scalar(CONST_LOG_ADVANTAGES, torch.mean(advantages), self.log_step)
             surr1 = ratios * advantages
             surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages
-            logWriter.add_scalar(CONST_LOG_SURR2, torch.mean(surr2), self.log_step)
             # final loss of clipped objective PPO
             loss = -torch.min(surr1, surr2) + 0.5*self.MseLoss(state_values, rewards) - 0.01*dist_entropy
-            logWriter.add_scalar(CONST_LOG_VALUE_LOSS, self.MseLoss(state_values, rewards), self.log_step)
-            logWriter.add_scalar(CONST_LOG_LOSS, torch.mean(loss), self.log_step)  
-           
+            
             # take gradient step
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
-            #actor
-            logWriter.add_scalar(CONST_LOG_ACTOR_LR, self.optimizer.param_groups[0]['lr'], self.log_step)
-            #critic
-            logWriter.add_scalar(CONST_LOG_CRITIC_LR, self.optimizer.param_groups[1]['lr'], self.log_step)
             
         # Copy new weights into old policy
         self.policy_old.load_state_dict(self.policy.state_dict())

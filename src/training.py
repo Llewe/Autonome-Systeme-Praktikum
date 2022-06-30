@@ -12,8 +12,7 @@ import platform
 import os
 
 CONST_LOG_ACTION_STD = "training/action_std x timestep"
-CONST_LOG_EPISODE_REWARD = "training/reward x episode"
-CONST_LOG_TIMESTEP_REWARD = "training/reward x timestep"
+CONST_LOG_EPISODE_REWARD = "training/return x episode"
 CONST_LOG_HYPER_PARAMETERS = "training/h_param"
 CONST_LOG_ACTION_FREQUENCY = "training/action_frequency"
 
@@ -167,7 +166,6 @@ def trainingUnity(env,
                 logWriter.add_scalar(CONST_LOG_ACTION_STD, action_std, time_step)     
                   
             reward_episode += reward
-            logWriter.add_scalar(CONST_LOG_TIMESTEP_REWARD, reward, time_step)
             time_step += 1
             
         print(nr_episode, ":", reward_episode)
@@ -235,7 +233,6 @@ def trainingGym(env,
             
             state = next_state
             reward_episode += reward
-            logWriter.add_scalar(CONST_LOG_TIMESTEP_REWARD, reward, time_step)
             time_step += 1
             
         print(nr_episode, ":", reward_episode)
