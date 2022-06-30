@@ -5,7 +5,7 @@ cleanupSlurmOut()
 
 startTraining()
 {
-  sbatch --partition=All --cpus-per-task=4 python3 startPyMain.py $@
+  sbatch --partition=All --cpus-per-task=4 startPyMain.sh $@
 }
 cleanupSlurmOut
 
