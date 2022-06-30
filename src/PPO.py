@@ -28,11 +28,12 @@ class TempBuffer:
         self.logprob = {}
         
 class PPO:
-    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std_init, device,simulations=1):
+    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std_init, device, logWriter, simulations=1):
 
         self.log_step = 0
         self.action_std = action_std_init
         self.device = device
+        self.logWriter = logWriter
 
         self.gamma = gamma
         self.eps_clip = eps_clip
@@ -98,7 +99,7 @@ class PPO:
             self.tempBuffer[i].state = None
 
 
-    def update(self, logWriter):
+    def update(self):
       
         
         # Monte Carlo estimate of returns
@@ -119,7 +120,7 @@ class PPO:
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(self.device)
         if(self.log_step % 5 == 0):
-            logWriter.add_histogram(CONST_LOG_REWARD_DISTRIBUTION, rewards, global_step = self.log_step)  
+            self.logWriter.add_histogram(CONST_LOG_REWARD_DISTRIBUTION, rewards, global_step = self.log_step)  
             
 
         # convert list to tensor
@@ -133,7 +134,7 @@ class PPO:
             # Evaluating old actions and values
             logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
 
-            logWriter.add_scalar(CONST_LOG_ENTROPY, torch.mean(dist_entropy), self.log_step)
+            self.logWriter.add_scalar(CONST_LOG_ENTROPY, torch.mean(dist_entropy), self.log_step)
             # match state_values tensor dimensions with rewards tensor
             state_values = torch.squeeze(state_values)
           

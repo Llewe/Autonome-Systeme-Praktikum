@@ -159,7 +159,7 @@ def trainingUnity(env,
   
             # 4. Integrate new experience into agent
             if time_step % update_timestep == 1:      
-                agent.update(logWriter)
+                agent.update()
                 
             if time_step % action_std_decay_freq == 1:
                 action_std = agent.decay_action_std(action_std_decay_rate, min_action_std)
@@ -280,6 +280,7 @@ def startTraining(args, env, state_dim, action_dim, simCount):
                 args.epsilon_clip, 
                 args.action_std,
                 device,
+                logWriter,
                 simCount)
     elif (args.agent == "random_agent"):
         agent = RandomAgent(state_dim,action_dim)
