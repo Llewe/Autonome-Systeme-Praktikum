@@ -1,24 +1,4 @@
 #!/bin/sh
-source l-ki/bin/activate
-
-
-cleanupSlurmOut()
-{
- rm slurm/slurm-*.out
-}
-
-start()
-{
-  sbatch --partition=All --cpus-per-task=4 python3 ../main.py $@
-}
-
-# delete all old slurm logfiles
-cleanupSlurmOut
-
-# list of jobs to start
-start 
-
-#!/bin/sh
 git fetch
 git switch slurm
 git pull
