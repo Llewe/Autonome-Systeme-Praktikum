@@ -1,6 +1,6 @@
 cleanupSlurmOut()
 {
- rm slurm/slurm-*.out
+ rm slurm-*.out
 }
 
 startTraining()
