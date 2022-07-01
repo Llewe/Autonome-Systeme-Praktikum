@@ -12,8 +12,7 @@ import platform
 import os
 
 CONST_LOG_ACTION_STD = "training/action_std x timestep"
-CONST_LOG_EPISODE_REWARD = "training/reward x episode"
-CONST_LOG_TIMESTEP_REWARD = "training/reward x timestep"
+CONST_LOG_EPISODE_REWARD = "training/return x episode"
 CONST_LOG_HYPER_PARAMETERS = "training/h_param"
 CONST_LOG_ACTION_FREQUENCY = "training/action_frequency"
 
@@ -113,7 +112,7 @@ def trainingUnity(env,
     
     # this uses only one env at a time => we only use env 0
     envId = 0
-    
+
     for nr_episode in range(nr_episodes):
         env.reset()
         activeEnvs, termEnvs = env.get_steps(bName)
@@ -125,6 +124,10 @@ def trainingUnity(env,
             # Generate 
             # an action for all envs
             action = agent.select_action(activeEnvs[envId].obs)
+            
+            # clip action space
+            action = np.nan_to_num(action)
+            action = np.clip(action, -1, 1)
             
             # add action for plotting
             action_dist.append(action)
@@ -163,14 +166,13 @@ def trainingUnity(env,
                 logWriter.add_scalar(CONST_LOG_ACTION_STD, action_std, time_step)     
                   
             reward_episode += reward
-            logWriter.add_scalar(CONST_LOG_TIMESTEP_REWARD, reward, time_step)
             time_step += 1
             
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD, reward_episode, time_step)
 
         # plot action distribution
-        if nr_episode % (0.2 * nr_episodes) == 1: # number of sessions
+        if nr_episode % (0.1 * nr_episodes) == 1: # number of sessions
             action_freq = np.array(action_dist)
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step)    
             # clear action buffer after histogram session
@@ -178,7 +180,7 @@ def trainingUnity(env,
             plot_histogram_step += 1
     
     logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = plot_histogram_step + 1)
-        
+    
 
 def trainingGym(env,
                 agent,
@@ -204,8 +206,15 @@ def trainingGym(env,
             # 1. Select action according to policy
             action = agent.select_action(state)
             
+            
+            # clip action space
+            action = np.nan_to_num(action)
+            action = np.clip(action, -1, 1)
+            
+                
             # add action for plotting
             action_dist.append(action)
+        
             
             # 2. Execute selected action
             next_state, reward, done, _ = env.step(action)
@@ -224,7 +233,6 @@ def trainingGym(env,
             
             state = next_state
             reward_episode += reward
-            logWriter.add_scalar(CONST_LOG_TIMESTEP_REWARD, reward, time_step)
             time_step += 1
             
         print(nr_episode, ":", reward_episode)
@@ -272,6 +280,7 @@ def startTraining(args, env, state_dim, action_dim, simCount):
                 args.epsilon_clip, 
                 args.action_std,
                 device,
+                logWriter,
                 simCount)
     elif (args.agent == "random_agent"):
         agent = RandomAgent(state_dim,action_dim)
