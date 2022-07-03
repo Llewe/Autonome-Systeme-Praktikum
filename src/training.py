@@ -284,7 +284,7 @@ def startTraining(args, env, state_dim, action_dim, simCount, output_dir, folder
         os.makedirs(modelPath)
     
     # create log path
-    logPath = output_dir + "/training-log" + folderPath
+    logPath = output_dir + "/training-logs" + folderPath
     
     if not os.path.exists(logPath):
         os.makedirs(logPath)

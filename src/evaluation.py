@@ -227,7 +227,7 @@ def testGym(env,
 def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath, modelPath):
     
      # create log path
-    logPath = output_dir + "/eval-log" + folderPath
+    logPath = output_dir + "/eval-logs" + folderPath
     
     if not os.path.exists(logPath):
         os.makedirs(logPath)
