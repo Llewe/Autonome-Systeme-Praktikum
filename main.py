@@ -5,6 +5,7 @@ from src.trainingBaseline import trainBaselinePPO
 from src.evaluation import startEval
 from datetime import datetime
 
+import glob
 import os
 import platform
 import argparse
@@ -55,10 +56,17 @@ if args.demo:
         trainBaselinePPO(args, env)
 else:
     if args.replay:
-        modelDir = os.listdir(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/")
+        
+        # load latest model with specified environment and tag
+        modelDir = glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*")
+     
         if len(modelDir) > 0:
-            print("Warning: Directory contains multiple entries. Choosing the latest entry, which may not be your intended model.")
-        modelPath = os.listdir(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/")[-1]
+            print("Info: Directory contains multiple entries. Choosing the latest entry, which may not be your intended model.")
+        
+        latestModel = max(modelDir, key=os.path.getctime)
+        checkpointList = glob.glob(latestModel + r'\*pth')
+        modelPath = max(checkpointList, key=os.path.getctime)
+        
         startEval(args, env, obsDim, actDim, simCount, output_dir, folderPath, modelPath)
     else:
         #Training mode

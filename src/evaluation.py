@@ -254,6 +254,7 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
                     args.gamma,
                     args.k_epochs,
                     args.epsilon_clip,
+                    args.action_std,
                     device,
                     logWriter,
                     simCount)
