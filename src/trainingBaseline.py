@@ -46,8 +46,8 @@ def trainBaselinePPO(args, env):
     if not os.path.exists(logDir):
         os.makedirs(logDir)
     actionLogDir = f"runs/logs/{args.tag}-actionlogger/{osName}-{currentTimeInSec}"
-    if not os.path.exists(logDir):
-        os.makedirs(logDir)
+    if not os.path.exists(actionLogDir):
+        os.makedirs(actionLogDir)
         
     logWriter = SummaryWriter(log_dir=actionLogDir)
     

@@ -1,6 +1,7 @@
 import numpy
 import torch
 import torch.nn as nn
+import os
 from src.ActorCritic import ActorCritic
 
 CONST_LOG_REWARD_DISTRIBUTION = "training/reward distribution"
@@ -171,8 +172,8 @@ class PPO:
 
         self.log_step += 1
 
-    def save(self, checkpoint_path):
-        torch.save(self.policy_old.state_dict(), checkpoint_path)
+    def save(self, checkpoint_path, time_step):
+        torch.save(self.policy_old.state_dict(), os.path.join(checkpoint_path, f"checkpoint-{time_step}.pth"))
 
     def load(self, checkpoint_path):
         self.policy_old.load_state_dict(torch.load(

@@ -1,7 +1,5 @@
 ./.vscode
-runs/
-tests/
-PPO_train.pth
+generated/
 
 # ---> Python
 # Byte-compiled / optimized / DLL files
