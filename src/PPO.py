@@ -141,7 +141,7 @@ class PPO:
                 old_states, old_actions)
 
             self.logWriter.add_scalar(
-                CONST_LOG_ENTROPY, torch.mean(dist_entropy), self.log_step)
+                CONST_LOG_ENTROPY, torch.mean(0.01*dist_entropy), self.log_step)
             # match state_values tensor dimensions with rewards tensor
             state_values = torch.squeeze(state_values)
 

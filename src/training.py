@@ -77,9 +77,6 @@ def trainingUnityVec(env,
             if time_step % update_timestep == 1:
                 agent.update()
                 
-            # save model
-            if nr_episode % (0.2 * nr_episodes) == 0:
-                agent.save(modelPath, time_step)
 
             if time_step % action_std_decay_freq == 1:
                 action_std = agent.decay_action_std(
@@ -88,6 +85,10 @@ def trainingUnityVec(env,
                                      action_std, nr_episode)
 
             time_step += 1
+
+        # save model
+        if nr_episode % (0.2 * nr_episodes) == 0:
+            agent.save(modelPath, time_step)
 
         reward_mean_episode = np.mean(reward_episode)
         print(nr_episode, ":", reward_mean_episode)
@@ -169,11 +170,7 @@ def trainingUnity(env,
             # 4. Integrate new experience into agent
             if time_step % update_timestep == 1:
                 agent.update()
-
-            # save model
-            if done and nr_episode % (0.2 * nr_episodes) == 0:
-                agent.save(modelPath, time_step)
-
+                
             if time_step % action_std_decay_freq == 1:
                 action_std = agent.decay_action_std(
                     action_std_decay_rate, min_action_std)
@@ -182,6 +179,10 @@ def trainingUnity(env,
 
             reward_episode += reward
             time_step += 1
+            
+        # save model
+        if nr_episode % (0.2 * nr_episodes) == 0:
+            agent.save(modelPath, time_step)
 
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
@@ -241,10 +242,7 @@ def trainingGym(env,
             # 4. Integrate new experience into agent
             if time_step % update_timestep == 1:
                 agent.update()
-                
-            # save model
-            if done and nr_episode % (0.2 * nr_episodes) == 0:
-                agent.save(modelPath, time_step)
+      
 
             if time_step % action_std_decay_freq == 1:
                 action_std = agent.decay_action_std(
@@ -255,6 +253,10 @@ def trainingGym(env,
             state = next_state
             reward_episode += reward
             time_step += 1
+        
+        # save model
+        if nr_episode % (0.2 * nr_episodes) == 0:
+            agent.save(modelPath, time_step)
 
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,

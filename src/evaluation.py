@@ -7,12 +7,14 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 import os
-
+import glob
 
 
 CONST_LOG_EPISODE_REWARD = "eval/return x episode"
 CONST_LOG_HYPER_PARAMETERS = "eval/h_param"
 CONST_LOG_ACTION_FREQUENCY = "eval/action_frequency"
+CONST_LOG_AVG_REWARD = "eval/average_reward"
+
 
 """
 test ppo with a unity env. 
@@ -165,6 +167,7 @@ def testUnity(env,
 
     average_reward = round((total_rewards / nr_episodes), 2)
     print("average test reward : " + str(average_reward))
+    logWriter.add_text(CONST_LOG_AVG_REWARD, str(average_reward))
 
 
 """
@@ -224,7 +227,7 @@ def testGym(env,
         action_freq), global_step=plot_histogram_step + 1)
 
 
-def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath, modelPath):
+def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath):
     
      # create log path
     logPath = output_dir + "/eval-logs" + folderPath
@@ -258,6 +261,16 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
                     device,
                     logWriter,
                     simCount)
+
+        # load latest model with specified environment and tag
+        modelDir = glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*")
+     
+        if len(modelDir) > 0:
+            print("Info: Directory contains multiple entries. Choosing the latest entry, which may not be your intended model.")
+        
+        latestModel = max(modelDir, key=os.path.getctime)
+        checkpointList = glob.glob(latestModel + r'\*pth')
+        modelPath = max(checkpointList, key=os.path.getctime)
 
         # load model  
         print("loading network from : " + modelPath)
