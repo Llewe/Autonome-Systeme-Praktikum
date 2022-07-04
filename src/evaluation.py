@@ -116,7 +116,7 @@ def testUnity(env,
         while not done:
             # Generate
             # an action for all envs
-            action = agent.select_action(activeEnvs[envId].obs)
+            action = agent.select_action(activeEnvs[envId].obs,evaluate=True)
 
             # clip action space
             action = np.nan_to_num(action)
@@ -197,7 +197,7 @@ def testGym(env,
         done = False
         while not done:
             # 1. Select action according to policy
-            action = agent.select_action(state)
+            action = agent.select_action(state,evaluate=True)
 
             # clip action space
             action = np.nan_to_num(action)
