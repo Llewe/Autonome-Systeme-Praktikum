@@ -16,7 +16,7 @@ def parseArguments():
     parser.add_argument("-cpu",   "--force_cpu",    action="store_true",            help="forces to use the cpu")
     parser.add_argument("-env", "--env",            default="unity",  type=str,     help="set the enviroment (gym,unity)")
     parser.add_argument("-env_n", "--env_name",     default="3DBall1",  type=str,   help="name the domain name")
-    parser.add_argument("-agent",   "--agent",      default="ppo",  type=str,       help="set the agent type here. (ppo,random_agent)")
+    parser.add_argument("-agent",   "--agent",      default="ppo",  type=str,       help="set the agent type here. (ppo,random_agent,ppo-baseline)")
     parser.add_argument("-tag", "--tag",            type=str, required=True, help="name/tag of the run")
     
     #hyperparameter
@@ -52,7 +52,7 @@ output_dir = "generated"
 folderPath = f"/{args.env}/{args.env_name}/{args.tag}/{osName}-{currentTimeInSec}"
 
 if args.demo:
-        trainBaselinePPO(args, env)
+        trainBaselinePPO(args, env, output_dir, folderPath)
 else:
     if args.evaluation:     
         startEval(args, env, obsDim, actDim, simCount, output_dir, folderPath)

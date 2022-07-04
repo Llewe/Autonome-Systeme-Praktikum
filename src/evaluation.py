@@ -5,9 +5,14 @@ from src.PPO import PPO
 from mlagents_envs.base_env import ActionTuple
 import torch
 from torch.utils.tensorboard import SummaryWriter
+from stable_baselines3 import PPO as BaselinePPO
+from stable_baselines3.ppo import MlpPolicy
+from stable_baselines3.common.vec_env import VecEnv
+from src.trainingBaseline import ActionLogger
 
 import os
 import glob
+
 
 
 CONST_LOG_EPISODE_REWARD = "eval/return x episode"
@@ -196,9 +201,13 @@ def testGym(env,
 
         done = False
         while not done:
+            
             # 1. Select action according to policy
-            action = agent.select_action(state,evaluate=True)
-
+            if isinstance(agent, BaselinePPO):
+                action, _ = agent.predict(state)    
+            else: 
+                action = agent.select_action(state,evaluate=True)
+           
             # clip action space
             action = np.nan_to_num(action)
             action = np.clip(action, -1, 1)
@@ -229,6 +238,7 @@ def testGym(env,
     logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
         action_freq), global_step=plot_histogram_step + 1)
 
+    
 """
 Scans for the biggest number in a list of path strings.
 The number must start after a "-" and end with a "."
@@ -264,20 +274,33 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
     else:
         print("Device set to : cpu")
 
-    if (args.agent == "ppo"):
-        # create PPO driven agent with hyperparameters
-        agent = PPO(state_dim,
-                    action_dim,
-                    args.lr_actor,
-                    args.lr_critic,
-                    args.gamma,
-                    args.k_epochs,
-                    args.epsilon_clip,
-                    args.action_std,
-                    device,
-                    logWriter,
-                    simCount)
+    if (args.agent in ["ppo", "ppo-baseline"]):
+        
+        if(args.agent == "ppo-baseline"):
+            agent = BaselinePPO(
+            policy=MlpPolicy,
+            env=ActionLogger(env,logWriter,args.episodes),
+            learning_rate=args.lr_actor,
+            gamma=args.gamma,
+            clip_range= args.epsilon_clip,
+            verbose=1,
+            tensorboard_log=logPath
+        )
 
+        else:
+            # create PPO driven agent with hyperparameters
+            agent = PPO(state_dim,
+                        action_dim,
+                        args.lr_actor,
+                        args.lr_critic,
+                        args.gamma,
+                        args.k_epochs,
+                        args.epsilon_clip,
+                        args.action_std,
+                        device,
+                        logWriter,
+                        simCount)
+            
         # load latest model with specified environment and tag
         modelDir = glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*")
      
@@ -295,7 +318,7 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
         # load model  
         print("loading network from : " + modelPath)
         agent.load(modelPath)
-
+        
     elif (args.agent == "random_agent"):
         agent = RandomAgent(state_dim, action_dim)
     else:
