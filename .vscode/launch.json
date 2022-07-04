@@ -19,6 +19,22 @@
       "justMyCode": true
     },
     {
+      "name": "PPO-Evaluate",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "console": "integratedTerminal",
+      "args": [
+        "-env",
+        "unity",
+        "-tag",
+        "u/std7/ke20",
+        "-eval",
+        "-e", "500"
+      ],
+      "justMyCode": true
+    },
+    {
       "name": "PPO-Training-Baselines",
       "type": "python",
       "request": "launch",
@@ -30,7 +46,8 @@
         "unity-gym",
         "-tag",
         "stable_baseline_ext_log",
-        "-e", "150000"
+        "-e",
+        "150000"
       ],
       "justMyCode": true
     },
@@ -41,10 +58,14 @@
       "program": "${workspaceFolder}/main.py",
       "console": "integratedTerminal",
       "args": [
-        "-agent", "random_agent",
-        "-env", "unity-gym",
-        "-tag", "stable_basline_extended_logger",
-        "-e", "50000"
+        "-agent",
+        "random_agent",
+        "-env",
+        "unity-gym",
+        "-tag",
+        "stable_basline_extended_logger",
+        "-e",
+        "50000"
       ],
       "justMyCode": true
     }

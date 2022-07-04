@@ -229,7 +229,20 @@ def testGym(env,
     logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
         action_freq), global_step=plot_histogram_step + 1)
 
-
+"""
+Scans for the biggest number in a list of path strings.
+The number must start after a "-" and end with a "."
+"""
+def findNewestPath(paths):
+    newestTime = 0
+    newestPath = ""
+    for p in paths:
+        time = int(p[(p.rfind("-")+1):].split(".")[0])
+        if (time > newestTime):
+            newestTime = time
+            newestPath = p
+    return newestPath
+    
 def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath):
     
      # create log path
@@ -271,10 +284,14 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
         if len(modelDir) > 0:
             print("Info: Directory contains multiple entries. Choosing the latest entry, which may not be your intended model.")
         
-        latestModel = max(modelDir, key=os.path.getctime)
+        latestModel = findNewestPath(modelDir)
         checkpointList = glob.glob(latestModel + r'\*pth')
-        modelPath = max(checkpointList, key=os.path.getctime)
-
+        
+        modelPath = findNewestPath(checkpointList)
+        
+        print(checkpointList)
+        print(modelPath)
+        
         # load model  
         print("loading network from : " + modelPath)
         agent.load(modelPath)
