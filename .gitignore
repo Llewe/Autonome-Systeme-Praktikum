@@ -1,5 +1,5 @@
 ./.vscode
-runs/
+generated/
 
 # ---> Python
 # Byte-compiled / optimized / DLL files

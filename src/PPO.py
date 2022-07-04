@@ -1,6 +1,7 @@
 import numpy
 import torch
 import torch.nn as nn
+import os
 from src.ActorCritic import ActorCritic
 
 CONST_LOG_REWARD_DISTRIBUTION = "training/reward distribution"
@@ -140,7 +141,7 @@ class PPO:
                 old_states, old_actions)
 
             self.logWriter.add_scalar(
-                CONST_LOG_ENTROPY, torch.mean(dist_entropy), self.log_step)
+                CONST_LOG_ENTROPY, torch.mean(0.01*dist_entropy), self.log_step)
             # match state_values tensor dimensions with rewards tensor
             state_values = torch.squeeze(state_values)
 
@@ -171,8 +172,8 @@ class PPO:
 
         self.log_step += 1
 
-    def save(self, checkpoint_path):
-        torch.save(self.policy_old.state_dict(), checkpoint_path)
+    def save(self, checkpoint_path, time_step):
+        torch.save(self.policy_old.state_dict(), os.path.join(checkpoint_path, f"checkpoint-{time_step}.pth"))
 
     def load(self, checkpoint_path):
         self.policy_old.load_state_dict(torch.load(
