@@ -7,24 +7,26 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 import os
+import glob
 
-CONST_LOG_ACTION_STD = "training/action_std x timestep"
-CONST_LOG_EPISODE_REWARD = "training/return x episode"
-CONST_LOG_HYPER_PARAMETERS = "training/h_param"
-CONST_LOG_ACTION_FREQUENCY = "training/action_frequency"
-CONST_CHECKPOINT_COUNT = 5 # change the number of model savings
 
-def trainingUnityVec(env,
+CONST_LOG_EPISODE_REWARD = "eval/return x episode"
+CONST_LOG_HYPER_PARAMETERS = "eval/h_param"
+CONST_LOG_ACTION_FREQUENCY = "eval/action_frequency"
+CONST_LOG_AVG_REWARD = "eval/average_reward"
+
+
+"""
+test ppo with a unity env. 
+Multiple simulations/agents
+
+"""
+
+def testUnityVec(env,
                      agent,
                      logWriter,
                      nr_episodes,
-                     update_timestep,
-                     action_std_decay_rate,
-                     min_action_std,
-                     action_std_decay_freq,
-                     simCount,
-                     modelPath):
-    
+                     simCount):
     time_step = 0
 
     # name of the "unity behavior"
@@ -73,46 +75,27 @@ def trainingUnityVec(env,
                     agent.save_action_reward(reward, dones[simId], simId)
                     # waiting[simId] = False
 
-            # 4. Integrate new experience into agent
-            if time_step % update_timestep == 1:
-                agent.update()
-                
-
-            if time_step % action_std_decay_freq == 1:
-                action_std = agent.decay_action_std(
-                    action_std_decay_rate, min_action_std)
-                logWriter.add_scalar(CONST_LOG_ACTION_STD,
-                                     action_std, nr_episode)
-
             time_step += 1
-
-        # save model
-        if (nr_episode % ((1/CONST_CHECKPOINT_COUNT) * nr_episodes) == 0) or (nr_episode == nr_episodes-1):
-            agent.save(modelPath, time_step)
 
         reward_mean_episode = np.mean(reward_episode)
         print(nr_episode, ":", reward_mean_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
                              reward_mean_episode, nr_episode)
 
+"""
+test ppo with a unity env. 
+One simulation/agent
 
 """
-train ppo with an unity env. This training will only use one simulation/agent
-"""
 
-
-def trainingUnity(env,
-                  agent,
-                  logWriter,
-                  nr_episodes,
-                  update_timestep,
-                  action_std_decay_rate,
-                  min_action_std,
-                  action_std_decay_freq, 
-                  modelPath):
+def testUnity(env,
+              agent,
+              logWriter,
+              nr_episodes):
 
     # for plotting of action distribution
     action_dist = []
+    total_rewards = 0
     plot_histogram_step = 0
 
     time_step = 0
@@ -144,7 +127,7 @@ def trainingUnity(env,
 
             # Convert action to a "unity" readable action
             action = ActionTuple(np.array([action], dtype=np.float32))
-
+            
             # Set the actions
             env.set_action_for_agent(bName, envId, action)
 
@@ -164,32 +147,17 @@ def trainingUnity(env,
             if envId not in activeEnvs and envId not in termEnvs:
                 print("Carefull enviId wasn't present")
 
-            # 3. Update buffer
-            agent.save_action_reward(reward, done)
-
-            # 4. Integrate new experience into agent
-            if time_step % update_timestep == 1:
-                agent.update()
-                
-            if time_step % action_std_decay_freq == 1:
-                action_std = agent.decay_action_std(
-                    action_std_decay_rate, min_action_std)
-                logWriter.add_scalar(CONST_LOG_ACTION_STD,
-                                     action_std, time_step)
-
             reward_episode += reward
             time_step += 1
-            
-        # save model
-        if (nr_episode % ((1/CONST_CHECKPOINT_COUNT) * nr_episodes) == 0) or (nr_episode == nr_episodes-1):
-            agent.save(modelPath, time_step)
+
+        total_rewards += reward_episode
 
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
                              reward_episode, time_step)
 
         # plot action distribution
-        if nr_episode % (0.1 * nr_episodes) == 1:  # number of sessions
+        if nr_episode % (0.1 * nr_episodes) == 0:  # number of sessions
             action_freq = np.array(action_dist)
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
                 action_freq), global_step=plot_histogram_step)
@@ -200,16 +168,21 @@ def trainingUnity(env,
     logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
         action_freq), global_step=plot_histogram_step + 1)
 
+    average_reward = round((total_rewards / nr_episodes), 2)
+    print("average test reward : " + str(average_reward))
+    logWriter.add_text(CONST_LOG_AVG_REWARD, str(average_reward))
 
-def trainingGym(env,
+
+"""
+test ppo with gym env. 
+One simulation/agent
+
+"""
+
+def testGym(env,
                 agent,
                 logWriter,
-                nr_episodes,
-                update_timestep,
-                action_std_decay_rate,
-                min_action_std,
-                action_std_decay_freq, 
-                modelPath):
+                nr_episodes):
 
     time_step = 0
 
@@ -236,27 +209,9 @@ def trainingGym(env,
             # 2. Execute selected action
             next_state, reward, done, _ = env.step(action)
 
-            # 3. Update buffer
-            agent.save_action_reward(reward, done)
-
-            # 4. Integrate new experience into agent
-            if time_step % update_timestep == 1:
-                agent.update()
-      
-
-            if time_step % action_std_decay_freq == 1:
-                action_std = agent.decay_action_std(
-                    action_std_decay_rate, min_action_std)
-                logWriter.add_scalar(CONST_LOG_ACTION_STD,
-                                     action_std, time_step)
-
             state = next_state
             reward_episode += reward
             time_step += 1
-        
-        # save model
-        if (nr_episode % ((1/CONST_CHECKPOINT_COUNT) * nr_episodes) == 0) or (nr_episode == nr_episodes-1):
-            agent.save(modelPath, time_step)
 
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
@@ -275,18 +230,10 @@ def trainingGym(env,
         action_freq), global_step=plot_histogram_step + 1)
 
 
-
-
-def startTraining(args, env, state_dim, action_dim, simCount, output_dir, folderPath):
+def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath):
     
-    # create path for saving model     
-    modelPath = output_dir + "/models" + folderPath 
-    
-    if not os.path.exists(modelPath):
-        os.makedirs(modelPath)
-    
-    # create log path
-    logPath = output_dir + "/training-logs" + folderPath
+     # create log path
+    logPath = output_dir + "/eval-logs" + folderPath
     
     if not os.path.exists(logPath):
         os.makedirs(logPath)
@@ -296,6 +243,7 @@ def startTraining(args, env, state_dim, action_dim, simCount, output_dir, folder
     logWriter.add_text(CONST_LOG_HYPER_PARAMETERS, str(args))
 
     device = torch.device('cpu')
+
     if(torch.cuda.is_available() and not args.force_cpu):
         device = torch.device('cuda:0')
         torch.cuda.empty_cache()
@@ -304,7 +252,6 @@ def startTraining(args, env, state_dim, action_dim, simCount, output_dir, folder
         print("Device set to : cpu")
 
     if (args.agent == "ppo"):
-
         # create PPO driven agent with hyperparameters
         agent = PPO(state_dim,
                     action_dim,
@@ -317,44 +264,45 @@ def startTraining(args, env, state_dim, action_dim, simCount, output_dir, folder
                     device,
                     logWriter,
                     simCount)
+
+        # load latest model with specified environment and tag
+        modelDir = glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*")
+     
+        if len(modelDir) > 0:
+            print("Info: Directory contains multiple entries. Choosing the latest entry, which may not be your intended model.")
+        
+        latestModel = max(modelDir, key=os.path.getctime)
+        checkpointList = glob.glob(latestModel + r'\*pth')
+        modelPath = max(checkpointList, key=os.path.getctime)
+
+        # load model  
+        print("loading network from : " + modelPath)
+        agent.load(modelPath)
+
     elif (args.agent == "random_agent"):
         agent = RandomAgent(state_dim, action_dim)
     else:
-        print(f"the agend isn't know: {args.agent}")
+        print(f"unknown agent: {args.agent}")
 
     if args.env == "unity":
         if simCount == 1:
-            trainingUnity(env,
-                          agent,
-                          logWriter,
-                          args.episodes,
-                          args.update_timestep,
-                          args.action_std_decay_rate,
-                          args.min_action_std,
-                          args.action_std_decay_freq,
-                          modelPath)
-        else:
-            trainingUnityVec(env,
-                             agent,
-                             logWriter,
-                             args.episodes,
-                             args.update_timestep,
-                             args.action_std_decay_rate,
-                             args.min_action_std,
-                             args.action_std_decay_freq,
-                             simCount,
-                             modelPath)
 
-    else:
-        trainingGym(env,
+            testUnity(env,
+                      agent,
+                      logWriter,
+                      args.episodes)
+        else:
+            testUnityVec(env,
                     agent,
                     logWriter,
                     args.episodes,
-                    args.update_timestep,
-                    args.action_std_decay_rate,
-                    args.min_action_std,
-                    args.action_std_decay_freq,
-                    modelPath)
+                    simCount)
+
+    else:
+        testGym(env,
+                agent,
+                logWriter,
+                args.episodes)
 
     # close writer
     logWriter.close()
