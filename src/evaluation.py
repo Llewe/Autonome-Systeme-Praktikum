@@ -127,6 +127,9 @@ def testUnity(env,
 
             # Convert action to a "unity" readable action
             action = ActionTuple(np.array([action], dtype=np.float32))
+            
+            # Set the actions
+            env.set_action_for_agent(bName, envId, action)
 
             # Move the simulation forward
             env.step()

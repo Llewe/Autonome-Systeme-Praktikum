@@ -12,7 +12,7 @@ CONST_LOG_ACTION_STD = "training/action_std x timestep"
 CONST_LOG_EPISODE_REWARD = "training/return x episode"
 CONST_LOG_HYPER_PARAMETERS = "training/h_param"
 CONST_LOG_ACTION_FREQUENCY = "training/action_frequency"
-
+CONST_CHECKPOINT_COUNT = 5 # change the number of model savings
 
 def trainingUnityVec(env,
                      agent,
@@ -87,7 +87,7 @@ def trainingUnityVec(env,
             time_step += 1
 
         # save model
-        if nr_episode % (0.2 * nr_episodes) == 0:
+        if (nr_episode % (1/CONST_CHECKPOINT_COUNT * nr_episodes)) or (nr_episode == nr_episodes) == 0:
             agent.save(modelPath, time_step)
 
         reward_mean_episode = np.mean(reward_episode)
@@ -181,7 +181,7 @@ def trainingUnity(env,
             time_step += 1
             
         # save model
-        if nr_episode % (0.2 * nr_episodes) == 0:
+        if (nr_episode % (1/CONST_CHECKPOINT_COUNT * nr_episodes)) or (nr_episode == nr_episodes) == 0:
             agent.save(modelPath, time_step)
 
         print(nr_episode, ":", reward_episode)
@@ -255,7 +255,7 @@ def trainingGym(env,
             time_step += 1
         
         # save model
-        if nr_episode % (0.2 * nr_episodes) == 0:
+        if (nr_episode % (1/CONST_CHECKPOINT_COUNT * nr_episodes)) or (nr_episode == nr_episodes) == 0:
             agent.save(modelPath, time_step)
 
         print(nr_episode, ":", reward_episode)

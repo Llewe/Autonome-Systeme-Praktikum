@@ -12,6 +12,7 @@ def parseArguments():
     parser = argparse.ArgumentParser("L-KI")
     parser.add_argument("-d",   "--demo",           action="store_true",            help="use the demo ppo")
     parser.add_argument("-r",   "--replay",         action="store_true",            help="enable replay mode")
+    parser.add_argument("-eval",   "--evaluation",  action="store_true",            help="run evaluation of trained model")
     parser.add_argument("-cpu",   "--force_cpu",    action="store_true",            help="forces to use the cpu")
     parser.add_argument("-env", "--env",            default="unity",  type=str,     help="set the enviroment (gym,unity)")
     parser.add_argument("-env_n", "--env_name",     default="3DBall1",  type=str,   help="name the domain name")
@@ -19,7 +20,7 @@ def parseArguments():
     parser.add_argument("-tag", "--tag",            type=str, required=True, help="name/tag of the run")
     
     #hyperparameter
-    parser.add_argument("-e", "--episodes",                         default=8000,  type=int,           help="training episode number")
+    parser.add_argument("-e", "--episodes",                         default=1000,  type=int,           help="training episode number")
     parser.add_argument("-us", "--update_timestep",                 default=1000,   type=int,           help="number of steps until update (n_steps/update_timestep) e.g. max_ep_len * 4")
     parser.add_argument("-g", "--gamma",                            default=0.99,   type=float,         help="discount factor, probably 0.99 at its best")
     parser.add_argument("-lr_a", "--lr_actor",                      default=1e-04,  type=float,         help="learn rate of the actor")
@@ -53,8 +54,7 @@ folderPath = f"/{args.env}/{args.env_name}/{args.tag}/{osName}-{currentTimeInSec
 if args.demo:
         trainBaselinePPO(args, env)
 else:
-    if args.replay:
-        
+    if args.evaluation:     
         startEval(args, env, obsDim, actDim, simCount, output_dir, folderPath)
     else:
         #Training mode
