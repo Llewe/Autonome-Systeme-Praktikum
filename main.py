@@ -5,8 +5,6 @@ from src.trainingBaseline import trainBaselinePPO
 from src.evaluation import startEval
 from datetime import datetime
 
-import glob
-import os
 import platform
 import argparse
 
@@ -21,17 +19,17 @@ def parseArguments():
     parser.add_argument("-tag", "--tag",            type=str, required=True, help="name/tag of the run")
     
     #hyperparameter
-    parser.add_argument("-e", "--episodes",                         default=100,  type=int,           help="training episode number")
-    parser.add_argument("-us", "--update_timestep",                 default=10,   type=int,           help="number of steps until update (n_steps/update_timestep) e.g. max_ep_len * 4")
+    parser.add_argument("-e", "--episodes",                         default=8000,  type=int,           help="training episode number")
+    parser.add_argument("-us", "--update_timestep",                 default=1000,   type=int,           help="number of steps until update (n_steps/update_timestep) e.g. max_ep_len * 4")
     parser.add_argument("-g", "--gamma",                            default=0.99,   type=float,         help="discount factor, probably 0.99 at its best")
     parser.add_argument("-lr_a", "--lr_actor",                      default=1e-04,  type=float,         help="learn rate of the actor")
     parser.add_argument("-lr_c", "--lr_critic",                     default=1e-04,  type=float,         help="learn rate of the critic")
     parser.add_argument("-ke", "--k_epochs",                        default=15,     type=int,           help="should probably be between [3, 30]")
     parser.add_argument("-e_clip", "--epsilon_clip",                default=0.3,    type=float,         help="should probably be between [0.1, 0.3]")
-    parser.add_argument("-a_std", "--action_std",                   default=0.8,    type=float,         help="")
+    parser.add_argument("-a_std", "--action_std",                   default=0.5,    type=float,         help="")
     parser.add_argument("-a_std_rate", "--action_std_decay_rate",   default=5e-4,   type=float,         help="action standard deviation decay rate")
-    parser.add_argument("-a_std_freq", "--action_std_decay_freq",   default=1e3,    type=int,           help="action standard deviation decay frequency")
-    parser.add_argument("-a_std_min", "--min_action_std",           default=1e-3,   type=float,         help="minimum action standard deviation")
+    parser.add_argument("-a_std_freq", "--action_std_decay_freq",   default=1000,    type=int,           help="action standard deviation decay frequency")
+    parser.add_argument("-a_std_min", "--min_action_std",           default=1e-2,   type=float,         help="minimum action standard deviation")
     
     return parser.parse_args()
     
@@ -57,17 +55,7 @@ if args.demo:
 else:
     if args.replay:
         
-        # load latest model with specified environment and tag
-        modelDir = glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*")
-     
-        if len(modelDir) > 0:
-            print("Info: Directory contains multiple entries. Choosing the latest entry, which may not be your intended model.")
-        
-        latestModel = max(modelDir, key=os.path.getctime)
-        checkpointList = glob.glob(latestModel + r'\*pth')
-        modelPath = max(checkpointList, key=os.path.getctime)
-        
-        startEval(args, env, obsDim, actDim, simCount, output_dir, folderPath, modelPath)
+        startEval(args, env, obsDim, actDim, simCount, output_dir, folderPath)
     else:
         #Training mode
         startTraining(args, env, obsDim, actDim, simCount, output_dir, folderPath)
