@@ -6,7 +6,7 @@ class RandomAgent:
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-    def select_action(self, state, simulation=0):
+    def select_action(self, state, simulation=0,evaluate=False):
         return np.random.uniform(-1.0,1.0,self.action_dim)
 
     """
