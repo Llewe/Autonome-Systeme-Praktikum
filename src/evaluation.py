@@ -274,34 +274,21 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
     else:
         print("Device set to : cpu")
 
-    if (args.agent in ["ppo", "ppo-baseline"]):
-        
-        if(args.agent == "ppo-baseline"):
-            agent = BaselinePPO(
-            policy=MlpPolicy,
-            env=ActionLogger(env,logWriter,args.episodes),
-            learning_rate=args.lr_actor,
-            gamma=args.gamma,
-            clip_range= args.epsilon_clip,
-            verbose=1,
-            tensorboard_log=logPath
-        )
+    if (args.agent == "ppo"):
+        # create PPO driven agent with hyperparameters
+        agent = PPO(state_dim,
+                    action_dim,
+                    args.lr_actor,
+                    args.lr_critic,
+                    args.gamma,
+                    args.k_epochs,
+                    args.epsilon_clip,
+                    args.action_std,
+                    device,
+                    logWriter,
+                    simCount)
 
-        else:
-            # create PPO driven agent with hyperparameters
-            agent = PPO(state_dim,
-                        action_dim,
-                        args.lr_actor,
-                        args.lr_critic,
-                        args.gamma,
-                        args.k_epochs,
-                        args.epsilon_clip,
-                        args.action_std,
-                        device,
-                        logWriter,
-                        simCount)
-            
-        # load latest model with specified environment and tag
+         # load latest model with specified environment and tag
         modelDir = glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*")
      
         if len(modelDir) > 0:
@@ -312,12 +299,18 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
         
         modelPath = findNewestPath(checkpointList)
         
-        print(checkpointList)
-        print(modelPath)
-        
         # load model  
         print("loading network from : " + modelPath)
         agent.load(modelPath)
+        
+        
+    elif(args.agent == "ppo-baseline"):
+            
+        # load latest model for baseline-ppo agent with specified environment and tag
+        modelPath = findNewestPath(glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/" + r'\*zip'))  
+
+        print("loading network from : " + modelPath)
+        agent = BaselinePPO.load(modelPath)
         
     elif (args.agent == "random_agent"):
         agent = RandomAgent(state_dim, action_dim)
