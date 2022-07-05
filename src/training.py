@@ -12,7 +12,8 @@ CONST_LOG_ACTION_STD = "training/action_std x timestep"
 CONST_LOG_EPISODE_REWARD = "training/return x episode"
 CONST_LOG_HYPER_PARAMETERS = "training/h_param"
 CONST_LOG_ACTION_FREQUENCY = "training/action_frequency"
-CONST_CHECKPOINT_COUNT = 5 # change the number of model savings
+CONST_FREQ_EPIS_CHECKPOINT = 1500  # change the number of model savings
+CONST_FREQ_EPIS_ACT_LOG = 500
 
 def trainingUnityVec(env,
                      agent,
@@ -24,87 +25,17 @@ def trainingUnityVec(env,
                      action_std_decay_freq,
                      simCount,
                      modelPath):
-    
-    time_step = 0
-
-    # name of the "unity behavior"
-    bName = list(env.behavior_specs)[0]
-
-    for nr_episode in range(nr_episodes):
-        # it should be possible, that this line is not needed but for now we will reset the env at the start of every episode
-        env.reset()
-        activeEnvs, termEnvs = env.get_steps(bName)
-
-        reward_episode = np.full(simCount, 0.0)
-
-        dones = np.full(simCount, False)
-        waiting = np.full(simCount, False)
-
-        while not all(dones):
-            for index in activeEnvs:
-                activeEnv = activeEnvs[index]
-                simId = activeEnv.agent_id
-                if not dones[simId]:  # and not waiting[simId]:
-                    action = agent.select_action(activeEnv.obs, simId)
-                    # Convert action to a "unity" readable action
-                    action = ActionTuple(np.array([action], dtype=np.float32))
-
-                    env.set_action_for_agent(bName, simId, action)
-
-                    waiting[simId] = True
-
-            # execute the steps in unity
-            env.step()
-            activeEnvs, termEnvs = env.get_steps(bName)
-
-            for simId in range(simCount):
-                if not dones[simId]:  # and waiting[simId]:
-                    if simId not in activeEnvs and simId not in termEnvs:
-                        continue
-
-                    reward = 0
-                    if simId in activeEnvs:  # The agent requested a decision
-                        reward += activeEnvs[simId].reward
-                    if simId in termEnvs:  # The agent terminated its episode
-                        reward += termEnvs[simId].reward
-                        dones[simId] = True
-                    reward_episode[simId] += reward
-
-                    agent.save_action_reward(reward, dones[simId], simId)
-                    # waiting[simId] = False
-
-            # 4. Integrate new experience into agent
-            if time_step % update_timestep == 1:
-                agent.update()
-                
-
-            if time_step % action_std_decay_freq == 1:
-                action_std = agent.decay_action_std(
-                    action_std_decay_rate, min_action_std)
-                logWriter.add_scalar(CONST_LOG_ACTION_STD,
-                                     action_std, nr_episode)
-
-            time_step += 1
-
-        # save model
-        if (nr_episode % ((1/CONST_CHECKPOINT_COUNT) * nr_episodes) == 0) or (nr_episode == nr_episodes-1):
-            agent.save(modelPath, time_step)
-
-        reward_mean_episode = np.mean(reward_episode)
-        print(nr_episode, ":", reward_mean_episode)
-        logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
-                             reward_mean_episode, nr_episode)
+    print("this function is not implemented yet")
+    pass
 
 
 """
 train ppo with an unity env. This training will only use one simulation/agent
 """
-
-
 def trainingUnity(env,
                   agent,
                   logWriter,
-                  nr_episodes,
+                  max_timesteps,
                   update_timestep,
                   action_std_decay_rate,
                   min_action_std,
@@ -122,8 +53,10 @@ def trainingUnity(env,
 
     # this uses only one env at a time => we only use env 0
     envId = 0
-
-    for nr_episode in range(nr_episodes):
+    
+    nr_episode = 0
+    
+    while time_step < max_timesteps:
         env.reset()
         activeEnvs, termEnvs = env.get_steps(bName)
 
@@ -141,7 +74,6 @@ def trainingUnity(env,
 
             # add action for plotting
             action_dist.append(action)
-            action_freq = np.array(action_dist)
 
             # Convert action to a "unity" readable action
             action = ActionTuple(np.array([action], dtype=np.float32))
@@ -182,7 +114,7 @@ def trainingUnity(env,
             time_step += 1
             
         # save model
-        if (nr_episode % ((1/CONST_CHECKPOINT_COUNT) * nr_episodes) == 0) or (nr_episode == nr_episodes-1):
+        if (nr_episode % CONST_FREQ_EPIS_CHECKPOINT == 0) or (time_step >= max_timesteps):
             agent.save(modelPath, time_step)
 
         print(nr_episode, ":", reward_episode)
@@ -190,21 +122,24 @@ def trainingUnity(env,
                              reward_episode, time_step)
 
         # plot action distribution
-        if nr_episode % (0.1 * nr_episodes) == 1:  # number of sessions
+        if (nr_episode % CONST_FREQ_EPIS_ACT_LOG == 0) or (time_step >= max_timesteps):  # number of sessions
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
-                action_freq), global_step=plot_histogram_step)
+                np.array(action_dist)), global_step=plot_histogram_step)
             # clear action buffer after histogram session
-            action_dist = []
+            action_dist *= 0
             plot_histogram_step += 1
+        
+        nr_episode+=1
 
-    logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
-        action_freq), global_step=plot_histogram_step + 1)
+    if len(action_dist) > 0:
+        logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
+            np.array(action_dist)), global_step=plot_histogram_step + 1)
 
 
 def trainingGym(env,
                 agent,
                 logWriter,
-                nr_episodes,
+                max_timesteps,
                 update_timestep,
                 action_std_decay_rate,
                 min_action_std,
@@ -217,7 +152,9 @@ def trainingGym(env,
     action_dist = []
     plot_histogram_step = 0
 
-    for nr_episode in range(nr_episodes):
+    nr_episode = 0
+    
+    while time_step < max_timesteps:
         state = env.reset()
         reward_episode = 0
 
@@ -232,7 +169,6 @@ def trainingGym(env,
 
             # add action for plotting
             action_dist.append(action)
-            action_freq = np.array(action_dist)
 
             # 2. Execute selected action
             next_state, reward, done, _ = env.step(action)
@@ -256,7 +192,7 @@ def trainingGym(env,
             time_step += 1
         
         # save model
-        if (nr_episode % ((1/CONST_CHECKPOINT_COUNT) * nr_episodes) == 0) or (nr_episode == nr_episodes-1):
+        if (nr_episode % CONST_FREQ_EPIS_CHECKPOINT == 0) or (time_step >= max_timesteps):
             agent.save(modelPath, time_step)
 
         print(nr_episode, ":", reward_episode)
@@ -264,15 +200,18 @@ def trainingGym(env,
                              reward_episode, time_step)
 
         # plot action distribution
-        if nr_episode % (0.2 * nr_episodes) == 1:  # number of sessions
+        if (nr_episode % CONST_FREQ_EPIS_ACT_LOG == 0) or (time_step >= max_timesteps):  # number of sessions
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
-                action_freq), global_step=plot_histogram_step)
+                np.array(action_dist)), global_step=plot_histogram_step)
             # clear action buffer after histogram session
-            action_dist = []
+            action_dist *= 0
             plot_histogram_step += 1
-
-    logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
-        action_freq), global_step=plot_histogram_step + 1)
+        
+        nr_episode+=1
+    
+    if len(action_dist) > 0:
+        logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
+            np.array(action_dist)), global_step=plot_histogram_step + 1)
 
 
 
@@ -327,7 +266,7 @@ def startTraining(args, env, state_dim, action_dim, simCount, output_dir, folder
             trainingUnity(env,
                           agent,
                           logWriter,
-                          args.episodes,
+                          args.max_timesteps,
                           args.update_timestep,
                           args.action_std_decay_rate,
                           args.min_action_std,
@@ -337,7 +276,7 @@ def startTraining(args, env, state_dim, action_dim, simCount, output_dir, folder
             trainingUnityVec(env,
                              agent,
                              logWriter,
-                             args.episodes,
+                             args.max_timesteps,
                              args.update_timestep,
                              args.action_std_decay_rate,
                              args.min_action_std,
@@ -349,7 +288,7 @@ def startTraining(args, env, state_dim, action_dim, simCount, output_dir, folder
         trainingGym(env,
                     agent,
                     logWriter,
-                    args.episodes,
+                    args.max_timesteps,
                     args.update_timestep,
                     args.action_std_decay_rate,
                     args.min_action_std,
