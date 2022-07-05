@@ -1,3 +1,4 @@
+import glob
 import imp
 from pyexpat import model
 from stable_baselines3 import PPO
@@ -39,7 +40,7 @@ class ActionLogger(Wrapper):
         self.logger.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(action_freq), global_step = self.plot_histogram_step)
         return super().close()
 
-def trainBaselinePPO(args, env):
+def trainBaselinePPO(args, env, output_dir, folderPath):
     osName = platform.node()
     currentTimeInSec = int(round(datetime.now().timestamp()))
     logDir = f"runs/logs/{args.tag}/{osName}-{currentTimeInSec}"
@@ -63,5 +64,12 @@ def trainBaselinePPO(args, env):
     agent.learn(total_timesteps=args.episodes,tb_log_name=args.tag)
     
     
+    # save model
+    modelPath = output_dir + "/models" + folderPath 
+    if not os.path.exists(modelPath):
+        os.makedirs(modelPath)
+    agent.save(os.path.join(modelPath, "checkpoint-1.pth"))
+    
     env.close()
     logWriter.close()
+    

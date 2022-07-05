@@ -19,6 +19,41 @@
       "justMyCode": true
     },
     {
+      "name": "PPO-Evaluate",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "console": "integratedTerminal",
+      "args": [
+        "-env",
+        "unity",
+        "-tag",
+        "u/std5/lr_same",
+        "-eval",
+        "-e", "500",
+
+        //"--env_rngMass",
+        //"--env_mass", "2.",
+        //"--env_minMass", "0.1",
+        //"--env_maxMass", "0.5",
+        //"--env_rngGravity",
+        //"--env_gravity", "1.",
+        //"--env_minGravity", "0.1",
+        //"--env_maxGravity", "100.",
+        //"--env_rngScale",
+        //"--env_individualScale",
+        //"--env_scale", "3.",
+        //"--env_scale_x", "3.",
+        //"--env_scale_y", "1.",
+        //"--env_scale_z", "2.",
+        //"--env_minScale", "0.1",
+        //"--env_maxScale", "10.",
+        "--env_video",
+        "--env_timeScale", "10."
+      ],
+      "justMyCode": true
+    },
+    {
       "name": "PPO-Training-Baselines",
       "type": "python",
       "request": "launch",
@@ -30,7 +65,8 @@
         "unity-gym",
         "-tag",
         "stable_baseline_ext_log",
-        "-e", "150000"
+        "-e",
+        "150000"
       ],
       "justMyCode": true
     },
@@ -41,10 +77,14 @@
       "program": "${workspaceFolder}/main.py",
       "console": "integratedTerminal",
       "args": [
-        "-agent", "random_agent",
-        "-env", "unity-gym",
-        "-tag", "stable_basline_extended_logger",
-        "-e", "50000"
+        "-agent",
+        "random_agent",
+        "-env",
+        "unity-gym",
+        "-tag",
+        "stable_basline_extended_logger",
+        "-e",
+        "50000"
       ],
       "justMyCode": true
     }

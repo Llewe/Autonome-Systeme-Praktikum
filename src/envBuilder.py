@@ -4,6 +4,8 @@ from gym_unity.envs import UnityToGymWrapper
 from mlagents_envs.side_channel.engine_configuration_channel import EngineConfigurationChannel
 import gym
 
+import random
+
 import os
 
 """
@@ -16,38 +18,51 @@ def createGymEnv(name='MountainCarContinuous-v0'):
 """
 create a unity domain
 """
-def createUnityEnv(name='3DEllipsoid1-Bouncy',no_graphics=True,time_scale=20.,rngMass=False,rngGravity=False,rngScale=False,individualScale=False):
+def createUnityEnv(args):
+  rngMin = 0
+  rngMax = 100000
+  
   rootDir = os.getcwd()
-  unityEnvDir = os.path.join(rootDir, "unity-env",name)
+  unityEnvDir = os.path.join(rootDir, "unity-env",args.env_name)
   if not os.path.exists(unityEnvDir):
     print(f"Unit-Env file '{unityEnvDir}' doesn't exist.")
     exit()
   
   unityExe = os.path.abspath(unityEnvDir)
   
+  # Setup Channels
+  channel = EngineConfigurationChannel()
   envChannel = EnvironmentParametersChannel()
   
-  if(no_graphics):
-    channel = EngineConfigurationChannel()
-    envUnity = UnityEnvironment(file_name=unityExe,no_graphics=no_graphics, side_channels=[channel,envChannel])
-    channel.set_configuration_parameters(time_scale = time_scale)
+  envUnity = UnityEnvironment(file_name=unityExe,no_graphics=not args.env_video, side_channels=[channel,envChannel])
+  
+  channel.set_configuration_parameters(time_scale = args.env_timeScale)
+
+  if args.env_rngMass:
+    envChannel.set_uniform_sampler_parameters("mass",min_value = args.env_minMass, max_value=args.env_maxMass,seed=random.randint(rngMin,rngMax))
   else:
-    envUnity = UnityEnvironment(file_name=unityExe,no_graphics=no_graphics, side_channels=[envChannel])
+    envChannel.set_float_parameter("mass",args.env_mass)
+
+  if args.env_rngGravity:
+    envChannel.set_uniform_sampler_parameters("gravity",min_value = args.env_minGravity, max_value=args.env_maxGravity,seed=random.randint(rngMin,rngMax))
+  else:
+    envChannel.set_float_parameter("gravity",args.env_gravity)
     
-  # Recommended parameter bounds: https://unity-technologies.github.io/ml-agents/Learning-Environment-Examples/#3dball-3d-balance-ball
-  if rngMass:
-    envChannel.set_gaussian_sampler_parameters("mass", 0.1,20,12)
-  
-  if rngGravity:
-    envChannel.set_uniform_sampler_parameters("gravity", 4,105,123124)
-  
-  if rngScale:
-    if individualScale:
-      envChannel.set_uniform_sampler_parameters("scale_x", 0.2,5,31512)
-      envChannel.set_uniform_sampler_parameters("scale_y",0.2,5,1231526)
-      envChannel.set_uniform_sampler_parameters("scale_z",0.2,5,344684)
+  if args.env_rngScale:
+    if args.env_individualScale:
+      envChannel.set_uniform_sampler_parameters("scale_x",min_value = args.env_minScale, max_value=args.env_maxScale,seed=random.randint(rngMin,rngMax))
+      envChannel.set_uniform_sampler_parameters("scale_y",min_value = args.env_minScale, max_value=args.env_maxScale,seed=random.randint(rngMin,rngMax))
+      envChannel.set_uniform_sampler_parameters("scale_z",min_value = args.env_minScale, max_value=args.env_maxScale,seed=random.randint(rngMin,rngMax))
     else:
-      envChannel.set_uniform_sampler_parameters("scale", 0.2,5,5463343)
+      envChannel.set_uniform_sampler_parameters("scale",min_value = args.env_minScale, max_value=args.env_maxScale,seed=random.randint(rngMin,rngMax))
+  else:
+    if args.env_individualScale:
+      envChannel.set_float_parameter("scale_x",args.env_scale_x)
+      envChannel.set_float_parameter("scale_y",args.env_scale_y)
+      envChannel.set_float_parameter("scale_z",args.env_scale_z)
+    else:
+      envChannel.set_float_parameter("scale",args.env_scale)
+
       
   # this reset is necessary otherwise there aren't any behavior specs present
   envUnity.reset()
@@ -68,8 +83,8 @@ def createUnityEnv(name='3DEllipsoid1-Bouncy',no_graphics=True,time_scale=20.,rn
 """
 create a unity domain with the gym wrapper
 """
-def createUnityGymEnv(name='3DEllipsoid1-Bouncy',no_graphics=True,time_scale=20.,rngMass=False,rngGravity=False,rngScale=False,individualScale=False):
-  envUnity,_,_,_ = createUnityEnv(name,no_graphics,time_scale,rngMass,rngGravity,rngScale,individualScale)
+def createUnityGymEnv(args):
+  envUnity,_,_,_ = createUnityEnv(args)
   env = UnityToGymWrapper(envUnity)
   return env, env.observation_space.shape[0], env.action_space.shape[0], 1
 
@@ -77,17 +92,13 @@ def createUnityGymEnv(name='3DEllipsoid1-Bouncy',no_graphics=True,time_scale=20.
 create an env from args
 """
 def buildFromArgs(args):
-  name = args.env_name
   if args.env == "gym":
     env, obsDim, actDim, simCount = createGymEnv()
   elif args.env == "unity":
-    noGraphics = not args.replay
-    env, obsDim, actDim, simCount = createUnityEnv(name=name,no_graphics=noGraphics)
+    env, obsDim, actDim, simCount = createUnityEnv(args)
   elif args.env == "unity-gym":
-    noGraphics = not args.replay
-    env, obsDim, actDim, simCount = createUnityGymEnv(name=name,no_graphics=noGraphics)
+    env, obsDim, actDim, simCount = createUnityGymEnv(args)
   else:
     print("unknown env. Falling back to gym env")
     env, obsDim,actDim = createGymEnv()
   return env, obsDim, actDim, simCount
-  

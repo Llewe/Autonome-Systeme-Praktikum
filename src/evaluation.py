@@ -5,9 +5,14 @@ from src.PPO import PPO
 from mlagents_envs.base_env import ActionTuple
 import torch
 from torch.utils.tensorboard import SummaryWriter
+from stable_baselines3 import PPO as BaselinePPO
+from stable_baselines3.ppo import MlpPolicy
+from stable_baselines3.common.vec_env import VecEnv
+from src.trainingBaseline import ActionLogger
 
 import os
 import glob
+
 
 
 CONST_LOG_EPISODE_REWARD = "eval/return x episode"
@@ -116,7 +121,7 @@ def testUnity(env,
         while not done:
             # Generate
             # an action for all envs
-            action = agent.select_action(activeEnvs[envId].obs)
+            action = agent.select_action(activeEnvs[envId].obs,evaluate=True)
 
             # clip action space
             action = np.nan_to_num(action)
@@ -196,9 +201,13 @@ def testGym(env,
 
         done = False
         while not done:
+            
             # 1. Select action according to policy
-            action = agent.select_action(state)
-
+            if isinstance(agent, BaselinePPO):
+                action, _ = agent.predict(state)    
+            else: 
+                action = agent.select_action(state,evaluate=True)
+           
             # clip action space
             action = np.nan_to_num(action)
             action = np.clip(action, -1, 1)
@@ -229,7 +238,21 @@ def testGym(env,
     logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
         action_freq), global_step=plot_histogram_step + 1)
 
-
+    
+"""
+Scans for the biggest number in a list of path strings.
+The number must start after a "-" and end with a "."
+"""
+def findNewestPath(paths):
+    newestTime = 0
+    newestPath = ""
+    for p in paths:
+        time = int(p[(p.rfind("-")+1):].split(".")[0])
+        if (time > newestTime):
+            newestTime = time
+            newestPath = p
+    return newestPath
+    
 def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath):
     
      # create log path
@@ -265,20 +288,30 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
                     logWriter,
                     simCount)
 
-        # load latest model with specified environment and tag
+         # load latest model with specified environment and tag
         modelDir = glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*")
      
         if len(modelDir) > 0:
             print("Info: Directory contains multiple entries. Choosing the latest entry, which may not be your intended model.")
         
-        latestModel = max(modelDir, key=os.path.getctime)
+        latestModel = findNewestPath(modelDir)
         checkpointList = glob.glob(latestModel + r'\*pth')
-        modelPath = max(checkpointList, key=os.path.getctime)
-
+        
+        modelPath = findNewestPath(checkpointList)
+        
         # load model  
         print("loading network from : " + modelPath)
         agent.load(modelPath)
+        
+        
+    elif(args.agent == "ppo-baseline"):
+            
+        # load latest model for baseline-ppo agent with specified environment and tag
+        modelPath = findNewestPath(glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/" + r'\*zip'))  
 
+        print("loading network from : " + modelPath)
+        agent = BaselinePPO.load(modelPath)
+        
     elif (args.agent == "random_agent"):
         agent = RandomAgent(state_dim, action_dim)
     else:

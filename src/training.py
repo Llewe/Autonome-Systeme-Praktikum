@@ -141,6 +141,7 @@ def trainingUnity(env,
 
             # add action for plotting
             action_dist.append(action)
+            action_freq = np.array(action_dist)
 
             # Convert action to a "unity" readable action
             action = ActionTuple(np.array([action], dtype=np.float32))
@@ -190,7 +191,6 @@ def trainingUnity(env,
 
         # plot action distribution
         if nr_episode % (0.1 * nr_episodes) == 1:  # number of sessions
-            action_freq = np.array(action_dist)
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
                 action_freq), global_step=plot_histogram_step)
             # clear action buffer after histogram session
@@ -232,6 +232,7 @@ def trainingGym(env,
 
             # add action for plotting
             action_dist.append(action)
+            action_freq = np.array(action_dist)
 
             # 2. Execute selected action
             next_state, reward, done, _ = env.step(action)
@@ -264,7 +265,6 @@ def trainingGym(env,
 
         # plot action distribution
         if nr_episode % (0.2 * nr_episodes) == 1:  # number of sessions
-            action_freq = np.array(action_dist)
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
                 action_freq), global_step=plot_histogram_step)
             # clear action buffer after histogram session

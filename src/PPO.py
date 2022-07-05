@@ -76,17 +76,21 @@ class PPO:
 
         return self.action_std
 
-    def select_action(self, state, simulation=0):
-        with torch.no_grad():
-            state = torch.FloatTensor(numpy.array(state)).to(self.device)
+    def select_action(self, state, simulation=0,evaluate=False):
+        if evaluate:
+            with torch.no_grad():
+                state = torch.FloatTensor(numpy.array(state)).to(self.device)
+            return self.policy_old.actor(state).detach().cpu().numpy().flatten()
+        else:
+            with torch.no_grad():
+                state = torch.FloatTensor(numpy.array(state)).to(self.device)
+                action, action_logprob = self.policy_old.act(state)
 
-            action, action_logprob = self.policy_old.act(state)
+            self.tempBuffer[simulation].state = state
+            self.tempBuffer[simulation].action = action
+            self.tempBuffer[simulation].logprob = action_logprob
 
-        self.tempBuffer[simulation].state = state
-        self.tempBuffer[simulation].action = action
-        self.tempBuffer[simulation].logprob = action_logprob
-
-        return action.detach().cpu().numpy().flatten()
+            return action.detach().cpu().numpy().flatten()
 
     def save_action_reward(self, reward, is_terminal, simulation=0):
         if self.tempBuffer[simulation].state is None:

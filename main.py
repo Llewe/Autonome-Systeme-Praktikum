@@ -1,3 +1,5 @@
+from pickle import TRUE
+from xmlrpc.client import boolean
 from codecarbon import OfflineEmissionsTracker
 from src.envBuilder import buildFromArgs
 from src.training import startTraining
@@ -11,12 +13,9 @@ import argparse
 def parseArguments():
     parser = argparse.ArgumentParser("L-KI")
     parser.add_argument("-d",   "--demo",           action="store_true",            help="use the demo ppo")
-    parser.add_argument("-r",   "--replay",         action="store_true",            help="enable replay mode")
     parser.add_argument("-eval",   "--evaluation",  action="store_true",            help="run evaluation of trained model")
     parser.add_argument("-cpu",   "--force_cpu",    action="store_true",            help="forces to use the cpu")
-    parser.add_argument("-env", "--env",            default="unity",  type=str,     help="set the enviroment (gym,unity)")
-    parser.add_argument("-env_n", "--env_name",     default="3DBall1",  type=str,   help="name the domain name")
-    parser.add_argument("-agent",   "--agent",      default="ppo",  type=str,       help="set the agent type here. (ppo,random_agent)")
+    parser.add_argument("-agent",   "--agent",      default="ppo",  type=str,       help="set the agent type here. (ppo,random_agent,ppo-baseline)")
     parser.add_argument("-tag", "--tag",            type=str, required=True, help="name/tag of the run")
     
     #hyperparameter
@@ -32,8 +31,34 @@ def parseArguments():
     parser.add_argument("-a_std_freq", "--action_std_decay_freq",   default=1000,    type=int,           help="action standard deviation decay frequency")
     parser.add_argument("-a_std_min", "--min_action_std",           default=1e-2,   type=float,         help="minimum action standard deviation")
     
-    return parser.parse_args()
+    #env parameter
+    parser.add_argument("-env", "--env",            default="unity",  type=str,     help="set the enviroment (gym,unity)")
+    parser.add_argument("-env_n", "--env_name",     default="3DBall1",  type=str,   help="name the domain name")
     
+    # Recommended parameter bounds: https://unity-technologies.github.io/ml-agents/Learning-Environment-Examples/#3dball-3d-balance-ball
+    parser.add_argument("--env_rngMass",        action="store_true",        help="enable random mass")
+    parser.add_argument("--env_mass",           default=1., type=float,      help="set mass if random is disabled")
+    parser.add_argument("--env_minMass",        default=0.1, type=float,    help="min mass if random is enabled")
+    parser.add_argument("--env_maxMass",        default=20., type=float,    help="max mass if random is enabled")
+    
+    parser.add_argument("--env_rngGravity",     action="store_true",        help="enable random gravity")
+    parser.add_argument("--env_gravity",        default=9.81, type=float,   help="set gravity if random is disabled")
+    parser.add_argument("--env_minGravity",     default=4., type=float,     help="min gravity if random is enabled")
+    parser.add_argument("--env_maxGravity",     default=105., type=float,   help="max gravity if random is enabled")
+
+    parser.add_argument("--env_rngScale",       action="store_true",        help="enable random ball scale")
+    parser.add_argument("--env_individualScale",action="store_true",        help="enable individual ball scale for x y z axis")
+    parser.add_argument("--env_scale",          default=1., type=float,      help="set scale if random and individual scale is disabled")
+    parser.add_argument("--env_scale_x",        default=1., type=float,      help="set scale for x axis if random scale is disabled and individual scale is enabled")
+    parser.add_argument("--env_scale_y",        default=1., type=float,      help="set scale for y axis if random scale is disabled and individual scale is enabled")
+    parser.add_argument("--env_scale_z",        default=1., type=float,      help="set scale for z axis if random scale is disabled and individual scale is enabled")
+    parser.add_argument("--env_minScale",       default=0.2, type=float,    help="min scale if random is enabled (works also combined with individual scale)")
+    parser.add_argument("--env_maxScale",       default=5., type=float,     help="max scale if random is enabled (works also combined with individual scale)")
+ 
+    parser.add_argument("--env_video",          action="store_true",        help="enable graphical output")
+    parser.add_argument("--env_timeScale",      default=20., type=float,    help="time speedup")
+ 
+    return parser.parse_args()
 
 tracker = OfflineEmissionsTracker(output_dir="./out/", country_iso_code="DEU") # project_name="L-KI"
 tracker.start()
@@ -52,7 +77,7 @@ output_dir = "generated"
 folderPath = f"/{args.env}/{args.env_name}/{args.tag}/{osName}-{currentTimeInSec}"
 
 if args.demo:
-        trainBaselinePPO(args, env)
+        trainBaselinePPO(args, env, output_dir, folderPath)
 else:
     if args.evaluation:     
         startEval(args, env, obsDim, actDim, simCount, output_dir, folderPath)
