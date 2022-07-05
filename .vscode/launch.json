@@ -14,7 +14,8 @@
         "-env",
         "unity",
         "-tag",
-        "ppo"
+        "ppo-test",
+        "-ts","500000"
       ],
       "justMyCode": true
     },
