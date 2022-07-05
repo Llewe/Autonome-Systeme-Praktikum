@@ -74,7 +74,6 @@ def trainingUnity(env,
 
             # add action for plotting
             action_dist.append(action)
-            action_freq = np.array(action_dist)
 
             # Convert action to a "unity" readable action
             action = ActionTuple(np.array([action], dtype=np.float32))
@@ -125,15 +124,16 @@ def trainingUnity(env,
         # plot action distribution
         if (nr_episode % CONST_FREQ_EPIS_ACT_LOG == 0) or (time_step >= max_timesteps):  # number of sessions
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
-                action_freq), global_step=plot_histogram_step)
+                np.array(action_dist)), global_step=plot_histogram_step)
             # clear action buffer after histogram session
-            action_dist = []
+            action_dist *= 0
             plot_histogram_step += 1
         
         nr_episode+=1
 
-    logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
-        action_freq), global_step=plot_histogram_step + 1)
+    if len(action_dist) > 0:
+        logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
+            np.array(action_dist)), global_step=plot_histogram_step + 1)
 
 
 def trainingGym(env,
@@ -169,7 +169,6 @@ def trainingGym(env,
 
             # add action for plotting
             action_dist.append(action)
-            action_freq = np.array(action_dist)
 
             # 2. Execute selected action
             next_state, reward, done, _ = env.step(action)
@@ -203,15 +202,16 @@ def trainingGym(env,
         # plot action distribution
         if (nr_episode % CONST_FREQ_EPIS_ACT_LOG == 0) or (time_step >= max_timesteps):  # number of sessions
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
-                action_freq), global_step=plot_histogram_step)
+                np.array(action_dist)), global_step=plot_histogram_step)
             # clear action buffer after histogram session
-            action_dist = []
+            action_dist *= 0
             plot_histogram_step += 1
         
         nr_episode+=1
-        
-    logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
-        action_freq), global_step=plot_histogram_step + 1)
+    
+    if len(action_dist) > 0:
+        logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
+            np.array(action_dist)), global_step=plot_histogram_step + 1)
 
 
 
