@@ -15,6 +15,7 @@
 
 ### Optional
 - `-d` use the demo ppo
+- `-r` enable replay mode (turn graphics on)
 - `-eval` run evaluation of trained model
 - `-cpu` forces to use the cpu 
 - `-env_n` name the domain name 
@@ -34,6 +35,8 @@
 - `-a_std_min` minimum action standard deviation
 
 ### Environment Parameter
+Recommended parameter bounds: https://unity-technologies.github.io/ml-agents/Learning-Environment-Examples/#3dball-3d-balance-ball
+
 - `--env_rngMass` default: `False` enable random mass
 - `--env_mass <float>` default: `1.` set mass if random is disabled
 - `--env_minMass <float>` default: `0.1` min mass if random is enabled
@@ -59,15 +62,10 @@ Load webpage `carbonboard --filepath="./out/emissions.csv"`
 
 ## Check Model Logs - TensorBoard
 ```
-tensorboard --logdir ./logs --port 9238
+tensorboard --logdir ./generated --port 9238
 ```
 
 ## Slurm
 ```
 sbatch --partition=All --cpus-per-task=4 slurm_runner.sh
 ```
-
-### Fix return code 127
- Error Message
- > mlagents_envs.exception.UnityEnvironmentException: Environment shut down with return code 127
- 
