@@ -1,4 +1,5 @@
 from ast import arg
+import platform
 import numpy as np
 from src.algorithms.RandomAgent import RandomAgent
 from src.PPO import PPO
@@ -288,14 +289,20 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
                     logWriter,
                     simCount)
 
-         # load latest model with specified environment and tag
+        # load latest model with specified environment and tag
         modelDir = glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*")
      
         if len(modelDir) > 0:
             print("Info: Directory contains multiple entries. Choosing the latest entry, which may not be your intended model.")
         
         latestModel = findNewestPath(modelDir)
-        checkpointList = glob.glob(latestModel + r'\*pth')
+        
+        file = r'\*pth'
+        # Linux needs turned slash
+        if platform.system() == "Linux":
+            file = r'/*pth'
+            
+        checkpointList = glob.glob(latestModel + file)
         
         modelPath = findNewestPath(checkpointList)
         

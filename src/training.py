@@ -12,8 +12,7 @@ CONST_LOG_ACTION_STD = "training/action_std x timestep"
 CONST_LOG_EPISODE_REWARD = "training/return x episode"
 CONST_LOG_HYPER_PARAMETERS = "training/h_param"
 CONST_LOG_ACTION_FREQUENCY = "training/action_frequency"
-CONST_FREQ_EPIS_CHECKPOINT = 1500  # change the number of model savings
-CONST_FREQ_EPIS_ACT_LOG = 500
+CONST_CHECKPOINT_COUNT = 5  # change the number of model savings
 
 def trainingUnityVec(env,
                      agent,
@@ -45,6 +44,8 @@ def trainingUnity(env,
     # for plotting of action distribution
     action_dist = []
     plot_histogram_step = 0
+    saving_interval = (1/CONST_CHECKPOINT_COUNT) * max_timesteps
+    model_checkpoint = saving_interval
 
     time_step = 0
 
@@ -112,22 +113,23 @@ def trainingUnity(env,
 
             reward_episode += reward
             time_step += 1
-            
-        # save model
-        if (nr_episode % CONST_FREQ_EPIS_CHECKPOINT == 0) or (time_step >= max_timesteps):
+          
+        # next timestep after last checkpoint when episode is finished
+        if ((model_checkpoint <= time_step) or (time_step >= max_timesteps)):
+            # save model
             agent.save(modelPath, time_step)
-
-        print(nr_episode, ":", reward_episode)
-        logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
-                             reward_episode, time_step)
-
-        # plot action distribution
-        if (nr_episode % CONST_FREQ_EPIS_ACT_LOG == 0) or (time_step >= max_timesteps):  # number of sessions
+            # add action log 
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
                 np.array(action_dist)), global_step=plot_histogram_step)
             # clear action buffer after histogram session
             action_dist *= 0
             plot_histogram_step += 1
+            model_checkpoint += saving_interval
+       
+        
+        print(nr_episode, ":", reward_episode)
+        logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
+                             reward_episode, time_step)
         
         nr_episode+=1
 
@@ -151,6 +153,8 @@ def trainingGym(env,
     # plot action distribution
     action_dist = []
     plot_histogram_step = 0
+    saving_interval = (1/CONST_CHECKPOINT_COUNT) * max_timesteps
+    model_checkpoint = saving_interval
 
     nr_episode = 0
     
@@ -191,21 +195,22 @@ def trainingGym(env,
             reward_episode += reward
             time_step += 1
         
-        # save model
-        if (nr_episode % CONST_FREQ_EPIS_CHECKPOINT == 0) or (time_step >= max_timesteps):
+        # next timestep after last checkpoint when episode is finished
+        if ((model_checkpoint <= time_step) or (time_step >= max_timesteps)):
+            # save model
             agent.save(modelPath, time_step)
-
-        print(nr_episode, ":", reward_episode)
-        logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
-                             reward_episode, time_step)
-
-        # plot action distribution
-        if (nr_episode % CONST_FREQ_EPIS_ACT_LOG == 0) or (time_step >= max_timesteps):  # number of sessions
+            # add action log 
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
                 np.array(action_dist)), global_step=plot_histogram_step)
             # clear action buffer after histogram session
             action_dist *= 0
             plot_histogram_step += 1
+            model_checkpoint += saving_interval
+        
+
+        print(nr_episode, ":", reward_episode)
+        logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
+                             reward_episode, time_step)
         
         nr_episode+=1
     
