@@ -15,7 +15,6 @@ import os
 import glob
 
 
-
 CONST_LOG_EPISODE_REWARD = "eval/return x episode"
 CONST_LOG_HYPER_PARAMETERS = "eval/h_param"
 CONST_LOG_ACTION_FREQUENCY = "eval/action_frequency"
@@ -28,11 +27,12 @@ Multiple simulations/agents
 
 """
 
+
 def testUnityVec(env,
-                     agent,
-                     logWriter,
-                     nr_episodes,
-                     simCount):
+                 agent,
+                 logWriter,
+                 nr_episodes,
+                 simCount):
     time_step = 0
 
     # name of the "unity behavior"
@@ -88,11 +88,13 @@ def testUnityVec(env,
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
                              reward_mean_episode, nr_episode)
 
+
 """
 test ppo with a unity env. 
 One simulation/agent
 
 """
+
 
 def testUnity(env,
               agent,
@@ -122,7 +124,7 @@ def testUnity(env,
         while not done:
             # Generate
             # an action for all envs
-            action = agent.select_action(activeEnvs[envId].obs,evaluate=True)
+            action = agent.select_action(activeEnvs[envId].obs, evaluate=True)
 
             # clip action space
             action = np.nan_to_num(action)
@@ -133,7 +135,7 @@ def testUnity(env,
 
             # Convert action to a "unity" readable action
             action = ActionTuple(np.array([action], dtype=np.float32))
-            
+
             # Set the actions
             env.set_action_for_agent(bName, envId, action)
 
@@ -185,10 +187,11 @@ One simulation/agent
 
 """
 
+
 def testGym(env,
-                agent,
-                logWriter,
-                nr_episodes):
+            agent,
+            logWriter,
+            nr_episodes):
 
     time_step = 0
 
@@ -202,13 +205,13 @@ def testGym(env,
 
         done = False
         while not done:
-            
+
             # 1. Select action according to policy
             if isinstance(agent, BaselinePPO):
-                action, _ = agent.predict(state)    
-            else: 
-                action = agent.select_action(state,evaluate=True)
-           
+                action, _ = agent.predict(state)
+            else:
+                action = agent.select_action(state, evaluate=True)
+
             # clip action space
             action = np.nan_to_num(action)
             action = np.clip(action, -1, 1)
@@ -239,11 +242,13 @@ def testGym(env,
     logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
         action_freq), global_step=plot_histogram_step + 1)
 
-    
+
 """
 Scans for the biggest number in a list of path strings.
 The number must start after a "-" and end with a "."
 """
+
+
 def findNewestPath(paths):
     newestTime = 0
     newestPath = ""
@@ -253,12 +258,13 @@ def findNewestPath(paths):
             newestTime = time
             newestPath = p
     return newestPath
-    
+
+
 def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath):
-    
-     # create log path
+
+    # create log path
     logPath = output_dir + "/eval-logs" + folderPath
-    
+
     if not os.path.exists(logPath):
         os.makedirs(logPath)
 
@@ -290,40 +296,41 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
                     simCount)
 
         # load latest model with specified environment and tag
-        modelDir = glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*")
-     
+        modelDir = glob.glob(
+            output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*")
+
         if len(modelDir) > 0:
             print("Info: Directory contains multiple entries. Choosing the latest entry, which may not be your intended model.")
-        
+
         latestModel = findNewestPath(modelDir)
-        
+
         file = r'\*pth'
         # Linux needs turned slash
-        if platform.system() == "Linux":
+        if platform.system() == "Linux" or platform.system() == "Darwin":
             file = r'/*pth'
-            
+
         checkpointList = glob.glob(latestModel + file)
-        
+
         modelPath = findNewestPath(checkpointList)
-        
-        # load model  
+
+        # load model
         print("loading network from : " + modelPath)
         agent.load(modelPath)
-        
-        
+
     elif(args.agent == "ppo-baseline"):
-        
+
         model_files = r'\*zip'
         # Linux needs turned slash
-        if platform.system() == "Linux":
+        if platform.system() == "Linux" or platform.system() == "Darwin":
             model_files = r'/*zip'
-            
+
         # load latest model for baseline-ppo agent with specified environment and tag
-        modelPath = findNewestPath(glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/" + model_files))  
+        modelPath = findNewestPath(glob.glob(
+            output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/" + model_files))
 
         print("loading network from : " + modelPath)
         agent = BaselinePPO.load(modelPath)
-        
+
     elif (args.agent == "random_agent"):
         agent = RandomAgent(state_dim, action_dim)
     else:
@@ -338,10 +345,10 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
                       args.episodes)
         else:
             testUnityVec(env,
-                    agent,
-                    logWriter,
-                    args.episodes,
-                    simCount)
+                         agent,
+                         logWriter,
+                         args.episodes,
+                         simCount)
 
     else:
         testGym(env,
