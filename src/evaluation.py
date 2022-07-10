@@ -1,4 +1,5 @@
 from ast import arg
+import platform
 import numpy as np
 from src.algorithms.RandomAgent import RandomAgent
 from src.PPO import PPO
@@ -14,11 +15,11 @@ import os
 import glob
 
 
-
 CONST_LOG_EPISODE_REWARD = "eval/return x episode"
 CONST_LOG_HYPER_PARAMETERS = "eval/h_param"
 CONST_LOG_ACTION_FREQUENCY = "eval/action_frequency"
 CONST_LOG_AVG_REWARD = "eval/average_reward"
+CONST_LOG_DROP_FREQUENCY = "eval/drop_frequency"
 
 
 """
@@ -27,11 +28,12 @@ Multiple simulations/agents
 
 """
 
+
 def testUnityVec(env,
-                     agent,
-                     logWriter,
-                     nr_episodes,
-                     simCount):
+                 agent,
+                 logWriter,
+                 nr_episodes,
+                 simCount):
     time_step = 0
 
     # name of the "unity behavior"
@@ -87,11 +89,13 @@ def testUnityVec(env,
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
                              reward_mean_episode, nr_episode)
 
+
 """
 test ppo with a unity env. 
 One simulation/agent
 
 """
+
 
 def testUnity(env,
               agent,
@@ -102,9 +106,9 @@ def testUnity(env,
     action_dist = []
     total_rewards = 0
     plot_histogram_step = 0
-
     time_step = 0
-
+    ball_drops = 0
+    
     # name of the "unity behavior"
     bName = list(env.behavior_specs)[0]
 
@@ -121,7 +125,7 @@ def testUnity(env,
         while not done:
             # Generate
             # an action for all envs
-            action = agent.select_action(activeEnvs[envId].obs,evaluate=True)
+            action = agent.select_action(activeEnvs[envId].obs, evaluate=True)
 
             # clip action space
             action = np.nan_to_num(action)
@@ -132,7 +136,7 @@ def testUnity(env,
 
             # Convert action to a "unity" readable action
             action = ActionTuple(np.array([action], dtype=np.float32))
-            
+
             # Set the actions
             env.set_action_for_agent(bName, envId, action)
 
@@ -169,6 +173,10 @@ def testUnity(env,
             # clear action buffer after histogram session
             action_dist = []
             plot_histogram_step += 1
+            
+        # plot ball drops
+        if reward_episode < 100:
+            ball_drops += 1
 
     logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
         action_freq), global_step=plot_histogram_step + 1)
@@ -176,6 +184,7 @@ def testUnity(env,
     average_reward = round((total_rewards / nr_episodes), 2)
     print("average test reward : " + str(average_reward))
     logWriter.add_text(CONST_LOG_AVG_REWARD, str(average_reward))
+    logWriter.add_text(CONST_LOG_DROP_FREQUENCY, str(ball_drops))
 
 
 """
@@ -184,12 +193,14 @@ One simulation/agent
 
 """
 
+
 def testGym(env,
-                agent,
-                logWriter,
-                nr_episodes):
+            agent,
+            logWriter,
+            nr_episodes):
 
     time_step = 0
+    ball_drops = 0
 
     # plot action distribution
     action_dist = []
@@ -198,16 +209,16 @@ def testGym(env,
     for nr_episode in range(nr_episodes):
         state = env.reset()
         reward_episode = 0
-
+        
         done = False
         while not done:
-            
+
             # 1. Select action according to policy
             if isinstance(agent, BaselinePPO):
-                action, _ = agent.predict(state)    
-            else: 
-                action = agent.select_action(state,evaluate=True)
-           
+                action, _ = agent.predict(state)
+            else:
+                action = agent.select_action(state, evaluate=True)
+
             # clip action space
             action = np.nan_to_num(action)
             action = np.clip(action, -1, 1)
@@ -221,6 +232,7 @@ def testGym(env,
             state = next_state
             reward_episode += reward
             time_step += 1
+            
 
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
@@ -234,15 +246,22 @@ def testGym(env,
             # clear action buffer after histogram session
             action_dist = []
             plot_histogram_step += 1
+            
+        # episode finishes because ball was dropped
+        if reward_episode < 100:
+            ball_drops += 1
 
     logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
         action_freq), global_step=plot_histogram_step + 1)
+    logWriter.add_text(CONST_LOG_DROP_FREQUENCY, str(ball_drops))
 
-    
+
 """
 Scans for the biggest number in a list of path strings.
 The number must start after a "-" and end with a "."
 """
+
+
 def findNewestPath(paths):
     newestTime = 0
     newestPath = ""
@@ -252,12 +271,13 @@ def findNewestPath(paths):
             newestTime = time
             newestPath = p
     return newestPath
-    
+
+
 def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath):
-    
-     # create log path
+
+    # create log path
     logPath = output_dir + "/eval-logs" + folderPath
-    
+
     if not os.path.exists(logPath):
         os.makedirs(logPath)
 
@@ -288,30 +308,42 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
                     logWriter,
                     simCount)
 
-         # load latest model with specified environment and tag
-        modelDir = glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*")
-     
+        # load latest model with specified environment and tag
+        modelDir = glob.glob(
+            output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*")
+
         if len(modelDir) > 0:
             print("Info: Directory contains multiple entries. Choosing the latest entry, which may not be your intended model.")
-        
+
         latestModel = findNewestPath(modelDir)
-        checkpointList = glob.glob(latestModel + r'\*pth')
-        
+
+        file = r'\*pth'
+        # Linux needs turned slash
+        if platform.system() == "Linux" or platform.system() == "Darwin":
+            file = r'/*pth'
+
+        checkpointList = glob.glob(latestModel + file)
+
         modelPath = findNewestPath(checkpointList)
-        
-        # load model  
+
+        # load model
         print("loading network from : " + modelPath)
         agent.load(modelPath)
-        
-        
+
     elif(args.agent == "ppo-baseline"):
-            
+
+        model_files = r'\*zip'
+        # Linux needs turned slash
+        if platform.system() == "Linux" or platform.system() == "Darwin":
+            model_files = r'/*zip'
+
         # load latest model for baseline-ppo agent with specified environment and tag
-        modelPath = findNewestPath(glob.glob(output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/" + r'\*zip'))  
+        modelPath = findNewestPath(glob.glob(
+            output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/" + model_files))
 
         print("loading network from : " + modelPath)
         agent = BaselinePPO.load(modelPath)
-        
+
     elif (args.agent == "random_agent"):
         agent = RandomAgent(state_dim, action_dim)
     else:
@@ -326,10 +358,10 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
                       args.episodes)
         else:
             testUnityVec(env,
-                    agent,
-                    logWriter,
-                    args.episodes,
-                    simCount)
+                         agent,
+                         logWriter,
+                         args.episodes,
+                         simCount)
 
     else:
         testGym(env,
