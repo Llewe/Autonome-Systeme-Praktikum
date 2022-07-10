@@ -339,7 +339,7 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
 
         # load latest model for baseline-ppo agent with specified environment and tag
         modelPath = findNewestPath(glob.glob(
-            output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/" + model_files))
+            output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*" + model_files))
 
         print("loading network from : " + modelPath)
         agent = BaselinePPO.load(modelPath)
