@@ -68,7 +68,7 @@ def trainBaselinePPO(args, env, output_dir, folderPath):
     modelPath = output_dir + "/models" + folderPath 
     if not os.path.exists(modelPath):
         os.makedirs(modelPath)
-    agent.save(os.path.join(modelPath, "checkpoint-1.pth"))
+    agent.save(os.path.join(modelPath, "checkpoint-1"))
     
     env.close()
     logWriter.close()
