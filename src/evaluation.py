@@ -19,6 +19,7 @@ CONST_LOG_EPISODE_REWARD = "eval/return x episode"
 CONST_LOG_HYPER_PARAMETERS = "eval/h_param"
 CONST_LOG_ACTION_FREQUENCY = "eval/action_frequency"
 CONST_LOG_AVG_REWARD = "eval/average_reward"
+CONST_LOG_DROP_FREQUENCY = "eval/drop_frequency"
 
 
 """
@@ -105,9 +106,9 @@ def testUnity(env,
     action_dist = []
     total_rewards = 0
     plot_histogram_step = 0
-
     time_step = 0
-
+    ball_drops = 0
+    
     # name of the "unity behavior"
     bName = list(env.behavior_specs)[0]
 
@@ -172,6 +173,10 @@ def testUnity(env,
             # clear action buffer after histogram session
             action_dist = []
             plot_histogram_step += 1
+            
+        # plot ball drops
+        if reward_episode < 100:
+            ball_drops += 1
 
     logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
         action_freq), global_step=plot_histogram_step + 1)
@@ -179,6 +184,7 @@ def testUnity(env,
     average_reward = round((total_rewards / nr_episodes), 2)
     print("average test reward : " + str(average_reward))
     logWriter.add_text(CONST_LOG_AVG_REWARD, str(average_reward))
+    logWriter.add_text(CONST_LOG_DROP_FREQUENCY, str(ball_drops))
 
 
 """
@@ -194,6 +200,7 @@ def testGym(env,
             nr_episodes):
 
     time_step = 0
+    ball_drops = 0
 
     # plot action distribution
     action_dist = []
@@ -202,7 +209,7 @@ def testGym(env,
     for nr_episode in range(nr_episodes):
         state = env.reset()
         reward_episode = 0
-
+        
         done = False
         while not done:
 
@@ -225,6 +232,7 @@ def testGym(env,
             state = next_state
             reward_episode += reward
             time_step += 1
+            
 
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
@@ -238,9 +246,14 @@ def testGym(env,
             # clear action buffer after histogram session
             action_dist = []
             plot_histogram_step += 1
+            
+        # episode finishes because ball was dropped
+        if reward_episode < 100:
+            ball_drops += 1
 
     logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
         action_freq), global_step=plot_histogram_step + 1)
+    logWriter.add_text(CONST_LOG_DROP_FREQUENCY, str(ball_drops))
 
 
 """
