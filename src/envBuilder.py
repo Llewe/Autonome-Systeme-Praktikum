@@ -34,7 +34,7 @@ def createUnityEnv(args):
   channel = EngineConfigurationChannel()
   envChannel = EnvironmentParametersChannel()
   
-  envUnity = UnityEnvironment(file_name=unityExe,no_graphics=not args.env_video, side_channels=[channel,envChannel])
+  envUnity = UnityEnvironment(file_name=unityExe,no_graphics=not args.env_video, side_channels=[channel,envChannel], seed=random.randint(-10000,10000))
   
   channel.set_configuration_parameters(time_scale = args.env_timeScale)
 
