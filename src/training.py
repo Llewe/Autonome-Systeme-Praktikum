@@ -13,6 +13,8 @@ CONST_LOG_EPISODE_REWARD = "training/return x episode"
 CONST_LOG_HYPER_PARAMETERS = "training/h_param"
 CONST_LOG_ACTION_FREQUENCY = "training/action_frequency"
 CONST_CHECKPOINT_COUNT = 5  # change the number of model savings
+CONST_LOG_AVG_REWARD = "eval/average_reward"
+CONST_LOG_DROP_FREQUENCY = "eval/drop_frequency"
 
 def trainingUnityVec(env,
                      agent,
@@ -46,7 +48,8 @@ def trainingUnity(env,
     plot_histogram_step = 0
     saving_interval = (1/CONST_CHECKPOINT_COUNT) * max_timesteps
     model_checkpoint = saving_interval
-
+    ball_drops = 0
+    total_rewards = 0
     time_step = 0
 
     # name of the "unity behavior"
@@ -57,7 +60,7 @@ def trainingUnity(env,
     
     nr_episode = 0
     
-    while time_step < max_timesteps:
+    while time_step < max_timesteps and nr_episode < 500:
         env.reset()
         activeEnvs, termEnvs = env.get_steps(bName)
 
@@ -126,6 +129,9 @@ def trainingUnity(env,
             plot_histogram_step += 1
             model_checkpoint += saving_interval
        
+        if reward_episode < 100:
+            ball_drops += 1
+        total_rewards += reward_episode
         
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
@@ -136,7 +142,9 @@ def trainingUnity(env,
     if len(action_dist) > 0:
         logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
             np.array(action_dist)), global_step=plot_histogram_step + 1)
-
+    average_reward = round((total_rewards / nr_episode), 2)
+    logWriter.add_text(CONST_LOG_AVG_REWARD, str(average_reward))
+    logWriter.add_text(CONST_LOG_DROP_FREQUENCY, str(ball_drops))
 
 def trainingGym(env,
                 agent,
@@ -155,7 +163,8 @@ def trainingGym(env,
     plot_histogram_step = 0
     saving_interval = (1/CONST_CHECKPOINT_COUNT) * max_timesteps
     model_checkpoint = saving_interval
-
+    ball_drops = 0
+    total_rewards = 0
     nr_episode = 0
     
     while time_step < max_timesteps:
@@ -207,7 +216,9 @@ def trainingGym(env,
             plot_histogram_step += 1
             model_checkpoint += saving_interval
         
-
+        if reward_episode < 100:
+            ball_drops += 1
+        total_rewards += reward_episode
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
                              reward_episode, time_step)
@@ -217,6 +228,9 @@ def trainingGym(env,
     if len(action_dist) > 0:
         logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
             np.array(action_dist)), global_step=plot_histogram_step + 1)
+    average_reward = round((total_rewards / nr_episode), 2)
+    logWriter.add_text(CONST_LOG_AVG_REWARD, str(average_reward))
+    logWriter.add_text(CONST_LOG_DROP_FREQUENCY, str(ball_drops))
 
 
 
