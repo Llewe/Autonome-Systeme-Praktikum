@@ -60,7 +60,7 @@ def trainingUnity(env,
     
     nr_episode = 0
     
-    while time_step < max_timesteps and nr_episode < 500:
+    while time_step < max_timesteps:
         env.reset()
         activeEnvs, termEnvs = env.get_steps(bName)
 
