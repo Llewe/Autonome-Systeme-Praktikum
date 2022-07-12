@@ -63,6 +63,20 @@ def createUnityEnv(args):
     else:
       envChannel.set_float_parameter("scale",args.env_scale)
 
+  # set ball colors
+  envChannel.set_float_parameter("color_r",args.env_color_r)
+  envChannel.set_float_parameter("color_g",args.env_color_g)
+  envChannel.set_float_parameter("color_b",args.env_color_b)
+  envChannel.set_float_parameter("color_a",args.env_color_a)
+  
+  # set physic material
+  envChannel.set_float_parameter("bounciness",args.env_bounciness)
+  envChannel.set_float_parameter("dynamicFriction",args.env_dynamicFriction)
+  envChannel.set_float_parameter("staticFriction",args.env_staticFriction)
+  
+  # set scale deviation limit
+  envChannel.set_float_parameter("scale_max_deviation",args.env_scale_max_dev)
+
       
   # this reset is necessary otherwise there aren't any behavior specs present
   envUnity.reset()

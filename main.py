@@ -53,8 +53,17 @@ def parseArguments():
     parser.add_argument("--env_scale_x",        default=1., type=float,      help="set scale for x axis if random scale is disabled and individual scale is enabled")
     parser.add_argument("--env_scale_y",        default=1., type=float,      help="set scale for y axis if random scale is disabled and individual scale is enabled")
     parser.add_argument("--env_scale_z",        default=1., type=float,      help="set scale for z axis if random scale is disabled and individual scale is enabled")
-    parser.add_argument("--env_minScale",       default=0.2, type=float,    help="min scale if random is enabled (works also combined with individual scale)")
+    parser.add_argument("--env_scale_max_dev",  default=0., type=float,      help="set the maximum difference betwen x y z scales. If 0 no maximum is set")
+    parser.add_argument("--env_minScale",       default=0.2,type=float,     help="min scale if random is enabled (works also combined with individual scale)")
     parser.add_argument("--env_maxScale",       default=5., type=float,     help="max scale if random is enabled (works also combined with individual scale)")
+    parser.add_argument("--env_color_r",       default=0.85,type=float,     help="set ball color (Red) value must be between [0-1]")
+    parser.add_argument("--env_color_g",       default=0.33,type=float,     help="set Ball color (Green) value must be between [0-1]")
+    parser.add_argument("--env_color_b",       default=0.93,type=float,     help="set ball color (Blue) value must be between [0-1]")
+    parser.add_argument("--env_color_a",       default=1.,  type=float,     help="set ball color (Alpha) value must be between [0-1]")
+    parser.add_argument("--env_bounciness",     default=1., type=float,      help="set bounciness of the ball [0-1]")
+    parser.add_argument("--env_dynamicFriction",default=0., type=float,      help="set dynamic friction of the ball [0-1] (more information: https://docs.unity3d.com/ScriptReference/PhysicMaterial.html)")
+    parser.add_argument("--env_staticFriction", default=0., type=float,      help="set static friction of the ball [0-1] (more information: https://docs.unity3d.com/ScriptReference/PhysicMaterial.html)")
+    
  
     parser.add_argument("--env_video",          action="store_true",        help="enable graphical output")
     parser.add_argument("--env_timeScale",      default=20., type=float,    help="time speedup")
