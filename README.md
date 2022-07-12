@@ -132,7 +132,7 @@ public void SetBall()
 }
 ```
 For this project also the following imports are needed.
-```
+```C#
 using Random = UnityEngine.Random;
 using System;
 ```
