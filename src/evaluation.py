@@ -167,19 +167,19 @@ def testUnity(env,
 
         # plot action distribution
         if nr_episode % (0.1 * nr_episodes) == 0:  # number of sessions
-            action_freq = np.array(action_dist)
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
-                action_freq), global_step=plot_histogram_step)
+                np.array(action_dist)), global_step=plot_histogram_step)
             # clear action buffer after histogram session
-            action_dist = []
+            action_dist *= 0
             plot_histogram_step += 1
             
         # plot ball drops
         if reward_episode < 100:
             ball_drops += 1
 
-    logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
-        action_freq), global_step=plot_histogram_step + 1)
+    if len(action_dist) > 0:
+        logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
+        np.array(action_dist)), global_step=plot_histogram_step + 1)
 
     average_reward = round((total_rewards / nr_episodes), 2)
     print("average test reward : " + str(average_reward))
@@ -201,7 +201,7 @@ def testGym(env,
 
     time_step = 0
     ball_drops = 0
-
+    total_rewards = 0
     # plot action distribution
     action_dist = []
     plot_histogram_step = 0
@@ -233,26 +233,29 @@ def testGym(env,
             reward_episode += reward
             time_step += 1
             
-
+        total_rewards += reward_episode
         print(nr_episode, ":", reward_episode)
         logWriter.add_scalar(CONST_LOG_EPISODE_REWARD,
                              reward_episode, time_step)
 
         # plot action distribution
-        if nr_episode % (0.2 * nr_episodes) == 1:  # number of sessions
-            action_freq = np.array(action_dist)
+        if nr_episode % (0.1 * nr_episodes) == 0:  # number of sessions
             logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
-                action_freq), global_step=plot_histogram_step)
+                np.array(action_dist)), global_step=plot_histogram_step)
             # clear action buffer after histogram session
-            action_dist = []
+            action_dist *= 0
             plot_histogram_step += 1
             
         # episode finishes because ball was dropped
         if reward_episode < 100:
             ball_drops += 1
 
-    logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
-        action_freq), global_step=plot_histogram_step + 1)
+    if len(action_dist) > 0:
+        logWriter.add_histogram(CONST_LOG_ACTION_FREQUENCY, torch.from_numpy(
+        np.array(action_dist)), global_step=plot_histogram_step + 1)
+    average_reward = round((total_rewards / nr_episodes), 2)
+    print("average test reward : " + str(average_reward))
+    logWriter.add_text(CONST_LOG_AVG_REWARD, str(average_reward))
     logWriter.add_text(CONST_LOG_DROP_FREQUENCY, str(ball_drops))
 
 
@@ -339,7 +342,7 @@ def startEval(args, env, state_dim, action_dim, simCount, output_dir, folderPath
 
         # load latest model for baseline-ppo agent with specified environment and tag
         modelPath = findNewestPath(glob.glob(
-            output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/" + model_files))
+            output_dir + f"/models/{args.env}/{args.env_name}/{args.tag}/*" + model_files))
 
         print("loading network from : " + modelPath)
         agent = BaselinePPO.load(modelPath)

@@ -12,7 +12,7 @@ cleanupSlurmOut
 startTraining \
 -tag test \
 -env unity \
--env_n 3DBall1 \
+-env_n 3DBall1Extended \
 -agent ppo \
 -e 10 \
 -us 10 \
@@ -24,4 +24,5 @@ startTraining \
 -a_std 0.8 \
 -a_std_rate 5e-4 \
 -a_std_freq 1000 \
--a_std_min 1e-3
+-a_std_min 1e-3 \
+--
