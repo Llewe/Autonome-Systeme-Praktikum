@@ -64,6 +64,10 @@ def parseArguments():
     parser.add_argument("--env_dynamicFriction",default=0., type=float,      help="set dynamic friction of the ball [0-1] (more information: https://docs.unity3d.com/ScriptReference/PhysicMaterial.html)")
     parser.add_argument("--env_staticFriction", default=0., type=float,      help="set static friction of the ball [0-1] (more information: https://docs.unity3d.com/ScriptReference/PhysicMaterial.html)")
     
+    parser.add_argument("--env_rngBounciness",  action="store_true",        help="enable random bounciness")
+    parser.add_argument("--env_minBounce",       default=0.1,type=float,     help="min bounciness if random is enabled")
+    parser.add_argument("--env_maxBounce",       default=1., type=float,     help="max bounciness if random is enabled")
+    
  
     parser.add_argument("--env_video",          action="store_true",        help="enable graphical output")
     parser.add_argument("--env_timeScale",      default=20., type=float,    help="time speedup")

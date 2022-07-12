@@ -66,6 +66,9 @@ Recommended parameter bounds: https://unity-technologies.github.io/ml-agents/Lea
 - `--env_bounciness <float>` default: `1.` set bounciness of the ball [0-1]
 - `--env_dynamicFriction <float>` default: `0.` set dynamic friction of the ball [0-1] (more information: https://docs.unity3d.com/ScriptReference/PhysicMaterial.html)
 - `--env_staticFriction <float>` default: `0.` set static friction of the ball [0-1] (more information: https://docs.unity3d.com/ScriptReference/PhysicMaterial.html)
+- `--env_rngBounciness` default: `False` enable random values for the ball bounciness
+- `--env_minBounce <float>` default: `0.` minimum bounciness if random is enabled
+- `--env_maxBounce <float>` default: `1.` maximum bounciness if random is enabled
 
 ## Check Carbon Footprint
 Load webpage `carbonboard --filepath="./out/emissions.csv"`
