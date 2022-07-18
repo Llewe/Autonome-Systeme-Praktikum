@@ -71,7 +71,6 @@ class PPO:
         self.action_std = round(self.action_std, 4)
         if (self.action_std <= min_action_std):
             self.action_std = min_action_std
-            #print("setting actor output action_std to min_action_std : ", self.action_std)
         self.set_action_std(self.action_std)
 
         return self.action_std
@@ -109,7 +108,7 @@ class PPO:
 
     def update(self):
 
-        # Monte Carlo estimate of returns
+        # Estimate of Returns
 
         rewards = []
 
